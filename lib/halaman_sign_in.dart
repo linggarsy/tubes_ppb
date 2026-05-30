@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tubes_ppb/halaman_berat_badan.dart';
 import 'package:tubes_ppb/halaman_sign_up.dart';
+import 'package:tubes_ppb/services/api_service.dart';
 import 'package:tubes_ppb/services/auth_service.dart';
-import 'halaman_beranda.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -24,35 +23,51 @@ class _SignInPageState extends State<SignInPage> {
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
 
     try {
+      // 1. Login ke Firebase
       final authService = Provider.of<AuthService>(context, listen: false);
       await authService.signInWithEmail(
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
 
-      if (!mounted) return;
-
-      final prefs = await SharedPreferences.getInstance();
-      final hasFilledData = prefs.containsKey('user_berat');
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Login berhasil! Selamat datang kembali.'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
+      // 2. Login ke MySQL
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final result = await apiService.login(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
       );
 
-      if (hasFilledData) {
-        Navigator.pushReplacementNamed(context, '/beranda');
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        final hasFilledData = result['data']['has_filled_data'] ?? false;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Login berhasil! Selamat datang kembali.'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        if (hasFilledData) {
+          Navigator.pushReplacementNamed(context, '/beranda');
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => BeratBadanPage()),
+          );
+        }
       } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => BeratBadanPage()),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Login gagal'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
         );
       }
     } catch (e) {
@@ -73,29 +88,48 @@ class _SignInPageState extends State<SignInPage> {
     setState(() => _isGoogleLoading = true);
 
     try {
+      // 1. Login ke Firebase
       final authService = Provider.of<AuthService>(context, listen: false);
-      final result = await authService.signInWithGoogle();
+      final firebaseResult = await authService.signInWithGoogle();
+      if (firebaseResult == null) return;
 
-      if (result == null) return; // User cancel
-      if (!mounted) return;
-
-      final prefs = await SharedPreferences.getInstance();
-      final hasFilledData = prefs.containsKey('user_berat');
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Selamat datang, ${result.user?.displayName ?? ''}!'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
-        ),
+      // 2. Login/Register ke MySQL
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final result = await apiService.loginWithGoogle(
+        email: firebaseResult.user?.email ?? '',
+        nama: firebaseResult.user?.displayName ?? '',
+        fotoUrl: firebaseResult.user?.photoURL ?? '',
       );
 
-      if (hasFilledData) {
-        Navigator.pushReplacementNamed(context, '/beranda');
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        final hasFilledData = result['data']['has_filled_data'] ?? false;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Selamat datang, ${firebaseResult.user?.displayName ?? ''}!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+
+        if (hasFilledData) {
+          Navigator.pushReplacementNamed(context, '/beranda');
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => BeratBadanPage()),
+          );
+        }
       } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => BeratBadanPage()),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Login Google gagal'),
+            backgroundColor: Colors.red,
+            duration: Duration(seconds: 2),
+          ),
         );
       }
     } catch (e) {
@@ -218,8 +252,8 @@ class _SignInPageState extends State<SignInPage> {
                                   : Icons.visibility,
                               color: Colors.grey,
                             ),
-                            onPressed: () => setState(
-                                () => _isPasswordVisible = !_isPasswordVisible),
+                            onPressed: () => setState(() =>
+                                _isPasswordVisible = !_isPasswordVisible),
                           ),
                           border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12)),
@@ -269,9 +303,11 @@ class _SignInPageState extends State<SignInPage> {
                             child: CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white),
                           )
-                        : Text('Login',
+                        : Text(
+                            'Login',
                             style: TextStyle(
-                                fontSize: 16, fontWeight: FontWeight.bold)),
+                                fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
                   ),
                 ),
 
@@ -283,8 +319,8 @@ class _SignInPageState extends State<SignInPage> {
                     Expanded(child: Divider(color: Colors.grey.shade300)),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
-                      child:
-                          Text('atau', style: TextStyle(color: Colors.grey)),
+                      child: Text('atau',
+                          style: TextStyle(color: Colors.grey)),
                     ),
                     Expanded(child: Divider(color: Colors.grey.shade300)),
                   ],
@@ -307,7 +343,8 @@ class _SignInPageState extends State<SignInPage> {
                         ? SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child:
+                                CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Image.network(
                             'https://www.google.com/favicon.ico',
@@ -317,7 +354,8 @@ class _SignInPageState extends State<SignInPage> {
                     label: Text(
                       'Masuk dengan Google',
                       style: TextStyle(
-                          color: Colors.black87, fontWeight: FontWeight.w500),
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w500),
                     ),
                   ),
                 ),
@@ -333,7 +371,8 @@ class _SignInPageState extends State<SignInPage> {
                     GestureDetector(
                       onTap: () => Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (context) => SignUpPage()),
+                        MaterialPageRoute(
+                            builder: (context) => SignUpPage()),
                       ),
                       child: Text(
                         'Sign up',
