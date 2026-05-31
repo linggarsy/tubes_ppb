@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tubes_ppb/halaman_target_berat.dart';
-import 'package:tubes_ppb/services/api_service.dart';
 
 class BeratBadanPage extends StatefulWidget {
   BeratBadanPage({super.key});

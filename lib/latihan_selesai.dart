@@ -27,12 +27,21 @@ class _LatihanSelesaiState extends State<LatihanSelesai> {
 
   Future<void> _saveProgress() async {
     setState(() => _isSaving = true);
-
     try {
       final apiService = Provider.of<ApiService>(context, listen: false);
-      await apiService.saveProgress(widget.hariKe);
+      // Debug
+      final userId = await apiService.getUserId();
+      print('=== DEBUG SAVE PROGRESS ===');
+      print('hariKe: ${widget.hariKe}');
+      print('userId: $userId');
+      
+      final result = await apiService.saveProgress(widget.hariKe);
+      
+      print('result: $result');
+      
       if (mounted) setState(() => _isSaved = true);
     } catch (e) {
+      print('ERROR: $e');
       if (mounted) setState(() => _isSaved = true);
     } finally {
       if (mounted) setState(() => _isSaving = false);
