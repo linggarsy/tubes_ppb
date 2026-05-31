@@ -6,11 +6,13 @@ import 'latihan_selesai.dart';
 class LatihanAktif extends StatefulWidget {
   final List<Map<String, dynamic>> daftarLatihan;
   final int currentIndex;
+  final String hariKe;
 
   const LatihanAktif({
     super.key,
     required this.daftarLatihan,
-    required this.currentIndex, required String hariKe,
+    required this.currentIndex,
+    required this.hariKe,
   });
 
   @override
@@ -22,7 +24,7 @@ class _LatihanAktifState extends State<LatihanAktif> {
   int _remainingSeconds = 0;
   bool _isPaused = false;
   bool _isFinished = false;
-  
+
   late String _currentLatihan;
   late int _currentDurasi;
   int _currentIndex = 0;
@@ -51,19 +53,16 @@ class _LatihanAktifState extends State<LatihanAktif> {
 
   void _startTimer() {
     _timer?.cancel();
-    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!_isPaused && !_isFinished) {
         setState(() {
           if (_remainingSeconds > 0) {
             _remainingSeconds--;
           }
-          
           if (_remainingSeconds == 0) {
             _timer?.cancel();
-            setState(() {
-              _isFinished = true;
-              _isPaused = false;
-            });
+            _isFinished = true;
+            _isPaused = false;
           }
         });
       }
@@ -84,10 +83,13 @@ class _LatihanAktifState extends State<LatihanAktif> {
   }
 
   void _finishAllLatihan() {
+    _timer?.cancel();
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (context) => LatihanSelesai(),
+        builder: (context) => LatihanSelesai(
+          hariKe: widget.hariKe,
+        ),
       ),
     );
   }
@@ -103,12 +105,18 @@ class _LatihanAktifState extends State<LatihanAktif> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.black,
-        title: Text('Melewatkan Latihan?', style: TextStyle(color: Colors.white)),
-        content: Text('Apakah Anda yakin ingin melewatkan latihan ini?', style: TextStyle(color: Colors.white70)),
+        title: const Text(
+          'Melewatkan Latihan?',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'Apakah Anda yakin ingin melewatkan latihan ini?',
+          style: TextStyle(color: Colors.white70),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Tidak', style: TextStyle(color: Colors.white)),
+            child: const Text('Tidak', style: TextStyle(color: Colors.white)),
           ),
           TextButton(
             onPressed: () {
@@ -120,7 +128,7 @@ class _LatihanAktifState extends State<LatihanAktif> {
                 _isPaused = false;
               });
             },
-            child: Text('Ya', style: TextStyle(color: Colors.red)),
+            child: const Text('Ya', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -132,19 +140,25 @@ class _LatihanAktifState extends State<LatihanAktif> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.black,
-        title: Text('Keluar Latihan?', style: TextStyle(color: Colors.white)),
-        content: Text('Progress latihan Anda tidak akan tersimpan.', style: TextStyle(color: Colors.white70)),
+        title: const Text(
+          'Keluar Latihan?',
+          style: TextStyle(color: Colors.white),
+        ),
+        content: const Text(
+          'Progress latihan Anda tidak akan tersimpan.',
+          style: TextStyle(color: Colors.white70),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Kembali', style: TextStyle(color: Colors.white)),
+            child: const Text('Kembali', style: TextStyle(color: Colors.white)),
           ),
           TextButton(
             onPressed: () {
               _timer?.cancel();
               Navigator.popUntil(context, (route) => route.isFirst);
             },
-            child: Text('Keluar', style: TextStyle(color: Colors.red)),
+            child: const Text('Keluar', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -157,7 +171,8 @@ class _LatihanAktifState extends State<LatihanAktif> {
     return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
-  bool get isLastLatihan => _currentIndex == widget.daftarLatihan.length - 1;
+  bool get isLastLatihan =>
+      _currentIndex == widget.daftarLatihan.length - 1;
 
   @override
   void dispose() {
@@ -172,7 +187,7 @@ class _LatihanAktifState extends State<LatihanAktif> {
       body: SafeArea(
         child: Center(
           child: Padding(
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -182,40 +197,49 @@ class _LatihanAktifState extends State<LatihanAktif> {
                     alignment: Alignment.topRight,
                     child: IconButton(
                       onPressed: _exitLatihan,
-                      icon: Icon(Icons.close, color: Color(0xFFCF0F0F), size: 28),
+                      icon: const Icon(
+                        Icons.close,
+                        color: Color(0xFFCF0F0F),
+                        size: 28,
+                      ),
                     ),
                   ),
-                
-                if (_isFinished && isLastLatihan) 
-                  SizedBox(height: 50),
-                
-                Spacer(),
-                
+
+                if (_isFinished && isLastLatihan)
+                  const SizedBox(height: 50),
+
+                const Spacer(),
+
                 Text(
                   _currentLatihan,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Color(0xFFCF0F0F),
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
                 ),
-                
-                SizedBox(height: 40),
-                
-                // Timer
+
+                const SizedBox(height: 40),
+
+                // Timer Circle
                 Container(
                   width: 180,
                   height: 180,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: _isFinished ? Colors.green : Color(0xFFCF0F0F), 
+                      color: _isFinished
+                          ? Colors.green
+                          : const Color(0xFFCF0F0F),
                       width: 6,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: (_isFinished ? Colors.green : Color(0xFFCF0F0F)).withOpacity(0.3),
+                        color: (_isFinished
+                                ? Colors.green
+                                : const Color(0xFFCF0F0F))
+                            .withOpacity(0.3),
                         blurRadius: 20,
                       ),
                     ],
@@ -223,34 +247,37 @@ class _LatihanAktifState extends State<LatihanAktif> {
                   child: Center(
                     child: Text(
                       _formatTime(_remainingSeconds),
-                      style: TextStyle(
-                        color: Colors.white,
+                      style: const TextStyle(
+                        color: Color(0xFFCF0F0F),
                         fontSize: 42,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ),
-                
-                SizedBox(height: 30),
-                
+
+                const SizedBox(height: 30),
+
+                // Label progress latihan
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Color(0xFFCF0F0F),
+                    color: const Color(0xFFCF0F0F),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     'Latihan ${_currentIndex + 1} dari ${widget.daftarLatihan.length}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white,
                       fontSize: 12,
                     ),
                   ),
                 ),
-                
-                SizedBox(height: 30),
-                
+
+                const SizedBox(height: 30),
+
+                // Tombol kontrol
                 if (!_isFinished)
                   Wrap(
                     spacing: 8,
@@ -270,42 +297,53 @@ class _LatihanAktifState extends State<LatihanAktif> {
                               });
                               _loadCurrentLatihan();
                             },
-                            icon: Icon(Icons.skip_previous, size: 16),
-                            label: Text('Sebelumnya', style: TextStyle(fontSize: 12)),
+                            icon: const Icon(Icons.skip_previous, size: 16),
+                            label: const Text('Sebelumnya',
+                                style: TextStyle(fontSize: 12)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.black,
                               foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 0),
                             ),
                           ),
                         ),
-                      
-                      // Jeda/Mulai
+
+                      // Tombol Jeda/Mulai
                       SizedBox(
                         height: 36,
                         child: ElevatedButton.icon(
                           onPressed: _togglePause,
-                          icon: Icon(_isPaused ? Icons.play_arrow : Icons.pause, size: 16),
-                          label: Text(_isPaused ? 'Mulai' : 'Jeda', style: TextStyle(fontSize: 12)),
+                          icon: Icon(
+                            _isPaused ? Icons.play_arrow : Icons.pause,
+                            size: 16,
+                          ),
+                          label: Text(
+                            _isPaused ? 'Mulai' : 'Jeda',
+                            style: const TextStyle(fontSize: 12),
+                          ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFFCF0F0F),
+                            backgroundColor: const Color(0xFFCF0F0F),
                             foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 0),
                           ),
                         ),
                       ),
-                      
-                      // Melewatkan
+
+                      // Tombol Melewatkan
                       SizedBox(
                         height: 36,
                         child: ElevatedButton.icon(
                           onPressed: _skipLatihan,
-                          icon: Icon(Icons.skip_next, size: 16),
-                          label: Text('Melewatkan', style: TextStyle(fontSize: 12)),
+                          icon: const Icon(Icons.skip_next, size: 16),
+                          label: const Text('Melewatkan',
+                              style: TextStyle(fontSize: 12)),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.black,
                             foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 0),
                           ),
                         ),
                       ),
@@ -327,14 +365,15 @@ class _LatihanAktifState extends State<LatihanAktif> {
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.green,
-                            padding: EdgeInsets.symmetric(vertical: 14),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
                           child: Text(
                             isLastLatihan ? 'SELESAI' : 'LANJUT',
-                            style: TextStyle(
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -342,42 +381,45 @@ class _LatihanAktifState extends State<LatihanAktif> {
                           ),
                         ),
                       ),
-                      
                       if (!isLastLatihan)
                         Padding(
-                          padding: EdgeInsets.only(top: 12),
+                          padding: const EdgeInsets.only(top: 12),
                           child: TextButton(
                             onPressed: _exitLatihan,
                             style: TextButton.styleFrom(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 8),
                             ),
-                            child: Text(
+                            child: const Text(
                               'keluar',
-                              style: TextStyle(color: Color(0xFFCF0F0F), fontSize: 14),
+                              style: TextStyle(
+                                  color: Color(0xFFCF0F0F), fontSize: 14),
                             ),
                           ),
                         ),
                     ],
                   ),
-                
-                Spacer(),
-                
+
+                const Spacer(),
+
                 if (!_isFinished && !isLastLatihan)
                   Padding(
-                    padding: EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.only(bottom: 8),
                     child: TextButton(
                       onPressed: _exitLatihan,
                       style: TextButton.styleFrom(
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 8),
                       ),
-                      child: Text(
+                      child: const Text(
                         'keluar',
-                        style: TextStyle(color: Color(0xFFCF0F0F), fontSize: 14),
+                        style: TextStyle(
+                            color: Color(0xFFCF0F0F), fontSize: 14),
                       ),
                     ),
                   ),
-                
-                SizedBox(height: 8),
+
+                const SizedBox(height: 8),
               ],
             ),
           ),

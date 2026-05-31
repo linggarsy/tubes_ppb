@@ -1,8 +1,43 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:tubes_ppb/halaman_daftar_hari.dart';
+import 'package:tubes_ppb/services/api_service.dart';
 
-class LatihanSelesai extends StatelessWidget {
-  const LatihanSelesai({super.key});
+class LatihanSelesai extends StatefulWidget {
+  final String hariKe;
+
+  const LatihanSelesai({
+    super.key,
+    required this.hariKe,
+  });
+
+  @override
+  State<LatihanSelesai> createState() => _LatihanSelesaiState();
+}
+
+class _LatihanSelesaiState extends State<LatihanSelesai> {
+  bool _isSaving = false;
+  bool _isSaved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _saveProgress();
+  }
+
+  Future<void> _saveProgress() async {
+    setState(() => _isSaving = true);
+
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      await apiService.saveProgress(widget.hariKe);
+      if (mounted) setState(() => _isSaved = true);
+    } catch (e) {
+      if (mounted) setState(() => _isSaved = true);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,11 +64,7 @@ class LatihanSelesai extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: Icon(
-                    Icons.check,
-                    color: Colors.white,
-                    size: 64,
-                  ),
+                  child: Icon(Icons.check, color: Colors.white, size: 64),
                 ),
                 SizedBox(height: 32),
                 Text(
@@ -46,13 +77,49 @@ class LatihanSelesai extends StatelessWidget {
                 ),
                 SizedBox(height: 16),
                 Text(
-                  'Anda telah menyelesaikan latihan hari ini',
+                  'Anda telah menyelesaikan ${widget.hariKe}',
                   style: TextStyle(
                     color: Color(0xFFCF0F0F),
                     fontSize: 16,
                   ),
                   textAlign: TextAlign.center,
                 ),
+                SizedBox(height: 8),
+
+                // Status simpan progress
+                if (_isSaving)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Color(0xFFCF0F0F),
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Menyimpan progress...',
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+                    ],
+                  ),
+
+                if (_isSaved && !_isSaving)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.cloud_done, color: Colors.green, size: 16),
+                      SizedBox(width: 8),
+                      Text(
+                        'Progress tersimpan',
+                        style: TextStyle(color: Colors.green, fontSize: 12),
+                      ),
+                    ],
+                  ),
+
                 SizedBox(height: 48),
                 SizedBox(
                   width: double.infinity,
@@ -60,7 +127,8 @@ class LatihanSelesai extends StatelessWidget {
                     onPressed: () {
                       Navigator.pushAndRemoveUntil(
                         context,
-                        MaterialPageRoute(builder: (context) => DaftarHariPage()),
+                        MaterialPageRoute(
+                            builder: (context) => DaftarHariPage()),
                         (route) => false,
                       );
                     },

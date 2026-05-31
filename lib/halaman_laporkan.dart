@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
 import 'package:tubes_ppb/halaman_saya.dart';
 import 'package:tubes_ppb/halaman_beranda.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tubes_ppb/services/api_service.dart';
 import 'progress_service.dart';
 
 class HalamanLaporkan extends StatefulWidget {
@@ -50,14 +52,47 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
   }
 
   Future<void> _loadData() async {
-    final completedDays = await _progressService.getCompletedDays();
-    
-    setState(() {
-      _totalLatihan = completedDays.length;
-      _totalKkal = completedDays.length * 85.5;
-      _totalMenit = completedDays.length * 15;
-      _hitungBMI();
-    });
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+
+      // Ambil progress dari MySQL
+      final progressResult = await apiService.getProgress();
+      if (progressResult['success'] == true) {
+        final total = progressResult['data']['total'] ?? 0;
+        setState(() {
+          _totalLatihan = total;
+          _totalKkal = total * 85.5;
+          _totalMenit = total * 15;
+        });
+      }
+
+      // Ambil riwayat berat dari MySQL
+      final beratResult = await apiService.getRiwayatBerat();
+      if (beratResult['success'] == true) {
+        final riwayat = beratResult['data']['riwayat'] as List;
+        if (riwayat.isNotEmpty) {
+          setState(() {
+            _beratBadanData =
+                riwayat.map((e) => (e['berat'] as num).toDouble()).toList();
+            _beratSaatIni = _beratBadanData.last;
+            _beratTertinggi =
+                _beratBadanData.reduce((a, b) => a > b ? a : b);
+            _beratTerendah =
+                _beratBadanData.reduce((a, b) => a < b ? a : b);
+            _hitungBMI();
+          });
+        }
+      }
+    } catch (e) {
+      // Fallback ke data lokal
+      final completedDays = await _progressService.getCompletedDays();
+      setState(() {
+        _totalLatihan = completedDays.length;
+        _totalKkal = completedDays.length * 85.5;
+        _totalMenit = completedDays.length * 15;
+        _hitungBMI();
+      });
+    }
   }
 
   void _catatBeratBadan() {

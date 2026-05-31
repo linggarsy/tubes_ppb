@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import 'package:tubes_ppb/services/api_service.dart';
+import 'package:tubes_ppb/user_provider.dart';
 
 class ProfilSayaPage extends StatefulWidget {
   const ProfilSayaPage({super.key});
@@ -10,13 +12,14 @@ class ProfilSayaPage extends StatefulWidget {
 
 class _ProfilSayaPageState extends State<ProfilSayaPage> {
   final _formKey = GlobalKey<FormState>();
-  
+
   String _nama = '';
   int _beratBadan = 70;
   int _targetBerat = 60;
   int _tinggiBadan = 165;
-  
+
   bool _isLoading = true;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -25,35 +28,89 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
   }
 
   Future<void> _loadProfil() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _nama = prefs.getString('user_nama') ?? '';
-      _beratBadan = prefs.getInt('user_berat') ?? 70;
-      _targetBerat = prefs.getInt('user_target_berat') ?? 60;
-      _tinggiBadan = prefs.getInt('user_tinggi') ?? 165;
-      _isLoading = false;
-    });
+    setState(() => _isLoading = true);
+
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final result = await apiService.getProfil();
+
+      if (result['success'] == true) {
+        final data = result['data'];
+        setState(() {
+          _nama = data['nama'] ?? '';
+          _beratBadan = data['berat_badan'] ?? 70;
+          _targetBerat = data['target_berat'] ?? 60;
+          _tinggiBadan = data['tinggi_badan'] ?? 165;
+        });
+      }
+    } catch (e) {
+      // Fallback ke UserProvider
+      if (mounted) {
+        final userProvider =
+            Provider.of<UserProvider>(context, listen: false);
+        setState(() {
+          _nama = userProvider.nama;
+          _beratBadan = userProvider.beratBadan;
+          _targetBerat = userProvider.targetBerat;
+          _tinggiBadan = userProvider.tinggiBadan;
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _saveProfil() async {
-    if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
-      
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_nama', _nama);
-      await prefs.setInt('user_berat', _beratBadan);
-      await prefs.setInt('user_target_berat', _targetBerat);
-      await prefs.setInt('user_tinggi', _tinggiBadan);
-      
+    if (!_formKey.currentState!.validate()) return;
+    _formKey.currentState!.save();
+
+    setState(() => _isSaving = true);
+
+    try {
+      final apiService = Provider.of<ApiService>(context, listen: false);
+      final result = await apiService.updateProfil(
+        nama: _nama,
+        beratBadan: _beratBadan,
+        targetBerat: _targetBerat,
+        tinggiBadan: _tinggiBadan,
+      );
+
+      if (!mounted) return;
+
+      if (result['success'] == true) {
+        // Update provider
+        final userProvider =
+            Provider.of<UserProvider>(context, listen: false);
+        await userProvider.loadUserData();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profil berhasil disimpan'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        Navigator.pop(context);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Gagal menyimpan profil'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Profil berhasil disimpan'),
-          backgroundColor: Colors.green,
-          duration: Duration(seconds: 2),
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 2),
         ),
       );
-      
-      Navigator.pop(context);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -65,19 +122,20 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Color(0xFFCF0F0F)),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFFCF0F0F)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: const Text(
           'Profil Saya',
           style: TextStyle(color: Color(0xFFCF0F0F)),
         ),
         centerTitle: true,
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFFCF0F0F)))
           : Padding(
-              padding: EdgeInsets.all(24.0),
+              padding: const EdgeInsets.all(24.0),
               child: Form(
                 key: _formKey,
                 child: ListView(
@@ -88,42 +146,39 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: Color(0xFFCF0F0F).withOpacity(0.1),
+                          color: const Color(0xFFCF0F0F).withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(
+                        child: const Icon(
                           Icons.person,
                           size: 50,
                           color: Color(0xFFCF0F0F),
                         ),
                       ),
                     ),
-                    SizedBox(height: 24),
-                    
+                    const SizedBox(height: 24),
+
                     // Nama
-                    Text(
-                      'Nama Lengkap',
-                      style: TextStyle(
-                        color: Color(0xFFCF0F0F),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 8),
+                    const Text('Nama Lengkap',
+                        style: TextStyle(
+                            color: Color(0xFFCF0F0F),
+                            fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
                     TextFormField(
                       initialValue: _nama,
                       decoration: InputDecoration(
                         hintText: 'Masukkan nama Anda',
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey),
-                        ),
+                            borderRadius: BorderRadius.circular(12)),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Colors.grey.shade300),
+                          borderSide:
+                              BorderSide(color: Colors.grey.shade300),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: Color(0xFFCF0F0F)),
+                          borderSide:
+                              const BorderSide(color: Color(0xFFCF0F0F)),
                         ),
                       ),
                       onSaved: (value) => _nama = value ?? '',
@@ -134,18 +189,15 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
                         return null;
                       },
                     ),
-                    
-                    SizedBox(height: 16),
-                    
+
+                    const SizedBox(height: 16),
+
                     // Berat Badan
-                    Text(
-                      'Berat Badan (kg)',
-                      style: TextStyle(
-                        color: Color(0xFFCF0F0F),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 8),
+                    const Text('Berat Badan (kg)',
+                        style: TextStyle(
+                            color: Color(0xFFCF0F0F),
+                            fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
@@ -155,32 +207,32 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
                             decoration: InputDecoration(
                               hintText: '70',
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                                  borderRadius: BorderRadius.circular(12)),
                             ),
-                            onSaved: (value) => _beratBadan = int.parse(value ?? '70'),
+                            onSaved: (value) =>
+                                _beratBadan = int.tryParse(value ?? '') ?? 70,
                             validator: (value) {
-                              if (value == null || value.isEmpty) return 'Isi berat badan';
+                              if (value == null || value.isEmpty) {
+                                return 'Isi berat badan';
+                              }
                               return null;
                             },
                           ),
                         ),
-                        SizedBox(width: 16),
-                        Text('kg', style: TextStyle(color: Colors.grey)),
+                        const SizedBox(width: 16),
+                        const Text('kg',
+                            style: TextStyle(color: Colors.grey)),
                       ],
                     ),
-                    
-                    SizedBox(height: 16),
-                    
+
+                    const SizedBox(height: 16),
+
                     // Target Berat
-                    Text(
-                      'Target Berat (kg)',
-                      style: TextStyle(
-                        color: Color(0xFFCF0F0F),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 8),
+                    const Text('Target Berat (kg)',
+                        style: TextStyle(
+                            color: Color(0xFFCF0F0F),
+                            fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
@@ -190,32 +242,32 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
                             decoration: InputDecoration(
                               hintText: '60',
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                                  borderRadius: BorderRadius.circular(12)),
                             ),
-                            onSaved: (value) => _targetBerat = int.parse(value ?? '60'),
+                            onSaved: (value) =>
+                                _targetBerat = int.tryParse(value ?? '') ?? 60,
                             validator: (value) {
-                              if (value == null || value.isEmpty) return 'Isi target berat';
+                              if (value == null || value.isEmpty) {
+                                return 'Isi target berat';
+                              }
                               return null;
                             },
                           ),
                         ),
-                        SizedBox(width: 16),
-                        Text('kg', style: TextStyle(color: Colors.grey)),
+                        const SizedBox(width: 16),
+                        const Text('kg',
+                            style: TextStyle(color: Colors.grey)),
                       ],
                     ),
-                    
-                    SizedBox(height: 16),
-                    
+
+                    const SizedBox(height: 16),
+
                     // Tinggi Badan
-                    Text(
-                      'Tinggi Badan (cm)',
-                      style: TextStyle(
-                        color: Color(0xFFCF0F0F),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 8),
+                    const Text('Tinggi Badan (cm)',
+                        style: TextStyle(
+                            color: Color(0xFFCF0F0F),
+                            fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
@@ -225,39 +277,47 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
                             decoration: InputDecoration(
                               hintText: '165',
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                                  borderRadius: BorderRadius.circular(12)),
                             ),
-                            onSaved: (value) => _tinggiBadan = int.parse(value ?? '165'),
+                            onSaved: (value) =>
+                                _tinggiBadan =
+                                    int.tryParse(value ?? '') ?? 165,
                             validator: (value) {
-                              if (value == null || value.isEmpty) return 'Isi tinggi badan';
+                              if (value == null || value.isEmpty) {
+                                return 'Isi tinggi badan';
+                              }
                               return null;
                             },
                           ),
                         ),
-                        SizedBox(width: 16),
-                        Text('cm', style: TextStyle(color: Colors.grey)),
+                        const SizedBox(width: 16),
+                        const Text('cm',
+                            style: TextStyle(color: Colors.grey)),
                       ],
                     ),
-                    
-                    SizedBox(height: 32),
-                    
+
+                    const SizedBox(height: 32),
+
                     ElevatedButton(
-                      onPressed: _saveProfil,
+                      onPressed: _isSaving ? null : _saveProfil,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFCF0F0F),
+                        backgroundColor: const Color(0xFFCF0F0F),
                         foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                            borderRadius: BorderRadius.circular(12)),
                       ),
-                      child: Text(
-                        'SIMPAN PERUBAHAN',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      child: _isSaving
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                  strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Text(
+                              'SIMPAN PERUBAHAN',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                     ),
                   ],
                 ),

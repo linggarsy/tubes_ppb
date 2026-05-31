@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tubes_ppb/halaman_profil_saya.dart';
 import 'package:tubes_ppb/halaman_sign_in.dart';
+import 'package:tubes_ppb/services/api_service.dart';
+import 'package:tubes_ppb/services/auth_service.dart';
 import 'halaman_beranda.dart';
 import 'halaman_laporkan.dart';
 
@@ -41,7 +44,8 @@ class _HalamanSayaState extends State<HalamanSaya> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Atur Ulang Perkembangan'),
-        content: const Text('Apakah Anda yakin ingin mengatur ulang semua progress latihan? Tindakan ini tidak dapat dibatalkan.'),
+        content: const Text(
+            'Apakah Anda yakin ingin mengatur ulang semua progress latihan? Tindakan ini tidak dapat dibatalkan.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -49,17 +53,35 @@ class _HalamanSayaState extends State<HalamanSaya> {
           ),
           TextButton(
             onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.remove('completed_days');
               Navigator.pop(context);
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Progress berhasil diatur ulang'),
-                  backgroundColor: Colors.green,
-                  duration: Duration(seconds: 2),
-                ),
-              );
+
+              try {
+                // Reset di MySQL
+                final apiService =
+                    Provider.of<ApiService>(context, listen: false);
+                await apiService.resetProgress();
+
+                // Reset di SharedPreferences
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('completed_days');
+
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Progress berhasil diatur ulang'),
+                    backgroundColor: Colors.green,
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Gagal reset progress: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Reset'),
@@ -82,25 +104,39 @@ class _HalamanSayaState extends State<HalamanSaya> {
           ),
           TextButton(
             onPressed: () async {
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool('is_logged_in', false);
-              
               Navigator.pop(context);
-              
-              // Navigasi ke halaman Sign In dan hapus semua halaman sebelumnya
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (context) => const SignInPage()),
-                (route) => false,
-              );
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Anda telah logout'),
-                  backgroundColor: Colors.green,
-                  duration: Duration(seconds: 2),
-                ),
-              );
+
+              try {
+                // Logout Firebase
+                final authService =
+                    Provider.of<AuthService>(context, listen: false);
+                await authService.signOut();
+
+                // Clear session API
+                final apiService =
+                    Provider.of<ApiService>(context, listen: false);
+                await apiService.clearSession();
+
+                // Clear SharedPreferences
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
+
+                if (!context.mounted) return;
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const SignInPage()),
+                  (route) => false,
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Gagal logout: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('Logout'),

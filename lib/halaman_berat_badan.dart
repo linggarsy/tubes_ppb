@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tubes_ppb/halaman_target_berat.dart';
+import 'package:tubes_ppb/services/api_service.dart';
 
 class BeratBadanPage extends StatefulWidget {
   BeratBadanPage({super.key});
@@ -33,10 +36,7 @@ class _BeratBadanPageState extends State<BeratBadanPage> {
               SizedBox(height: 16),
               Text(
                 'Izinkan kami mengenal Anda lebih baik agar kami dapat membantu meningkatkan hasil latihan Anda',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.black, fontSize: 14),
               ),
               Spacer(),
               Center(
@@ -90,11 +90,17 @@ class _BeratBadanPageState extends State<BeratBadanPage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    // Simpan sementara ke SharedPreferences
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setInt('user_berat', _beratBadan.toInt());
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => TargetBeratPage(beratAwal: _beratBadan.toInt()),
+                        builder: (context) => TargetBeratPage(
+                          beratAwal: _beratBadan.toInt(),
+                        ),
                       ),
                     );
                   },

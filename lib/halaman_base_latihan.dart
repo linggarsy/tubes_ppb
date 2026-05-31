@@ -124,7 +124,7 @@ class BaseLatihanPage extends StatelessWidget {
                       builder: (context) => PersiapanLatihan(
                         daftarLatihan: daftarLatihan,
                         currentIndex: 0,
-                        hariKe: hariKe,
+                        hariKe: hariKe, // sudah ada
                       ),
                     ),
                   );
