@@ -84,7 +84,7 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
         await userProvider.loadUserData();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Profil berhasil disimpan'),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 2),
@@ -96,7 +96,7 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
           SnackBar(
             content: Text(result['message'] ?? 'Gagal menyimpan profil'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
           ),
         );
       }
@@ -106,7 +106,7 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
         SnackBar(
           content: Text('Error: ${e.toString()}'),
           backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
+          duration: Duration(seconds: 2),
         ),
       );
     } finally {
@@ -122,20 +122,20 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFCF0F0F)),
+          icon: Icon(Icons.arrow_back, color: Color(0xFFCF0F0F)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Profil Saya',
           style: TextStyle(color: Color(0xFFCF0F0F)),
         ),
         centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(
+          ? Center(
               child: CircularProgressIndicator(color: Color(0xFFCF0F0F)))
           : Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(24.0),
               child: Form(
                 key: _formKey,
                 child: ListView(
@@ -146,24 +146,24 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFCF0F0F).withOpacity(0.1),
+                          color: Color(0xFFCF0F0F).withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.person,
                           size: 50,
                           color: Color(0xFFCF0F0F),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    SizedBox(height: 24),
 
                     // Nama
-                    const Text('Nama Lengkap',
+                    Text('Nama Lengkap',
                         style: TextStyle(
                             color: Color(0xFFCF0F0F),
                             fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     TextFormField(
                       initialValue: _nama,
                       decoration: InputDecoration(
@@ -178,7 +178,7 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                           borderSide:
-                              const BorderSide(color: Color(0xFFCF0F0F)),
+                              BorderSide(color: Color(0xFFCF0F0F)),
                         ),
                       ),
                       onSaved: (value) => _nama = value ?? '',
@@ -190,14 +190,14 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
                       },
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Berat Badan
-                    const Text('Berat Badan (kg)',
+                    Text('Berat Badan (kg)',
                         style: TextStyle(
                             color: Color(0xFFCF0F0F),
                             fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
@@ -219,20 +219,20 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        const Text('kg',
+                        SizedBox(width: 16),
+                        Text('kg',
                             style: TextStyle(color: Colors.grey)),
                       ],
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Target Berat
-                    const Text('Target Berat (kg)',
+                    Text('Target Berat (kg)',
                         style: TextStyle(
                             color: Color(0xFFCF0F0F),
                             fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
@@ -254,20 +254,20 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        const Text('kg',
+                        SizedBox(width: 16),
+                        Text('kg',
                             style: TextStyle(color: Colors.grey)),
                       ],
                     ),
 
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
 
                     // Tinggi Badan
-                    const Text('Tinggi Badan (cm)',
+                    Text('Tinggi Badan (cm)',
                         style: TextStyle(
                             color: Color(0xFFCF0F0F),
                             fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
+                    SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
@@ -290,31 +290,31 @@ class _ProfilSayaPageState extends State<ProfilSayaPage> {
                             },
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        const Text('cm',
+                        SizedBox(width: 16),
+                        Text('cm',
                             style: TextStyle(color: Colors.grey)),
                       ],
                     ),
 
-                    const SizedBox(height: 32),
+                    SizedBox(height: 32),
 
                     ElevatedButton(
                       onPressed: _isSaving ? null : _saveProfil,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFCF0F0F),
+                        backgroundColor: Color(0xFFCF0F0F),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
                       child: _isSaving
-                          ? const SizedBox(
+                          ? SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
                                   strokeWidth: 2, color: Colors.white),
                             )
-                          : const Text(
+                          : Text(
                               'SIMPAN PERUBAHAN',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),

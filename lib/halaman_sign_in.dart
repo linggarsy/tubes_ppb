@@ -52,7 +52,7 @@ class _SignInPageState extends State<SignInPage> {
         final hasFilledData = result['data']['has_filled_data'] ?? false;
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Login berhasil! Selamat datang kembali.'),
             backgroundColor: Colors.green,
             duration: Duration(seconds: 2),
@@ -72,7 +72,7 @@ class _SignInPageState extends State<SignInPage> {
           SnackBar(
             content: Text(result['message'] ?? 'Login gagal'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
           ),
         );
       }
@@ -82,7 +82,7 @@ class _SignInPageState extends State<SignInPage> {
         SnackBar(
           content: Text(e.toString()),
           backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
+          duration: Duration(seconds: 2),
         ),
       );
     } finally {
@@ -134,7 +134,7 @@ class _SignInPageState extends State<SignInPage> {
               'Selamat datang, ${firebaseResult.user?.displayName ?? ''}!',
             ),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
           ),
         );
 
@@ -151,7 +151,7 @@ class _SignInPageState extends State<SignInPage> {
           SnackBar(
             content: Text(result['message'] ?? 'Login Google gagal'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 2),
+            duration: Duration(seconds: 2),
           ),
         );
       }
@@ -162,7 +162,7 @@ class _SignInPageState extends State<SignInPage> {
         SnackBar(
           content: Text('Google Sign In gagal: ${e.toString()}'),
           backgroundColor: Colors.red,
-          duration: const Duration(seconds: 2),
+          duration: Duration(seconds: 2),
         ),
       );
     } finally {
@@ -184,13 +184,13 @@ class _SignInPageState extends State<SignInPage> {
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
+            padding: EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Header
-                const Text(
+                Text(
                   'Sign In',
                   style: TextStyle(
                     color: Color(0xFFCF0F0F),
@@ -198,12 +198,12 @@ class _SignInPageState extends State<SignInPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
+                SizedBox(height: 8),
+                Text(
                   'Masuk ke akun Anda untuk melanjutkan',
                   style: TextStyle(color: Colors.grey, fontSize: 14),
                 ),
-                const SizedBox(height: 40),
+                SizedBox(height: 40),
 
                 // Form
                 Form(
@@ -212,20 +212,20 @@ class _SignInPageState extends State<SignInPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Email
-                      const Text(
+                      Text(
                         'Email',
                         style: TextStyle(
                           color: Color(0xFFCF0F0F),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           hintText: 'email@gmail.com',
-                          prefixIcon: const Icon(
+                          prefixIcon: Icon(
                             Icons.email_outlined,
                             color: Color(0xFFCF0F0F),
                           ),
@@ -240,7 +240,7 @@ class _SignInPageState extends State<SignInPage> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide:
-                                const BorderSide(color: Color(0xFFCF0F0F)),
+                                BorderSide(color: Color(0xFFCF0F0F)),
                           ),
                         ),
                         validator: (value) {
@@ -254,23 +254,23 @@ class _SignInPageState extends State<SignInPage> {
                         },
                       ),
 
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16),
 
                       // Password
-                      const Text(
+                      Text(
                         'Password',
                         style: TextStyle(
                           color: Color(0xFFCF0F0F),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      SizedBox(height: 8),
                       TextFormField(
                         controller: _passwordController,
                         obscureText: !_isPasswordVisible,
                         decoration: InputDecoration(
                           hintText: 'enter your password',
-                          prefixIcon: const Icon(
+                          prefixIcon: Icon(
                             Icons.lock_outline,
                             color: Color(0xFFCF0F0F),
                           ),
@@ -296,7 +296,7 @@ class _SignInPageState extends State<SignInPage> {
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide:
-                                const BorderSide(color: Color(0xFFCF0F0F)),
+                                BorderSide(color: Color(0xFFCF0F0F)),
                           ),
                         ),
                         validator: (value) {
@@ -313,7 +313,7 @@ class _SignInPageState extends State<SignInPage> {
                   ),
                 ),
 
-                const SizedBox(height: 32),
+                SizedBox(height: 32),
 
                 // Tombol Login
                 SizedBox(
@@ -321,15 +321,15 @@ class _SignInPageState extends State<SignInPage> {
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFCF0F0F),
+                      backgroundColor: Color(0xFFCF0F0F),
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     child: _isLoading
-                        ? const SizedBox(
+                        ? SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(
@@ -337,7 +337,7 @@ class _SignInPageState extends State<SignInPage> {
                               color: Colors.white,
                             ),
                           )
-                        : const Text(
+                        : Text(
                             'Login',
                             style: TextStyle(
                               fontSize: 16,
@@ -347,13 +347,13 @@ class _SignInPageState extends State<SignInPage> {
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // Divider
                 Row(
                   children: [
                     Expanded(child: Divider(color: Colors.grey.shade300)),
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
                       child: Text(
                         'atau',
@@ -364,7 +364,7 @@ class _SignInPageState extends State<SignInPage> {
                   ],
                 ),
 
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
 
                 // Tombol Google
                 SizedBox(
@@ -372,14 +372,14 @@ class _SignInPageState extends State<SignInPage> {
                   child: OutlinedButton.icon(
                     onPressed: _isGoogleLoading ? null : _loginWithGoogle,
                     style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      padding: EdgeInsets.symmetric(vertical: 14),
                       side: BorderSide(color: Colors.grey.shade300),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     icon: _isGoogleLoading
-                        ? const SizedBox(
+                        ? SizedBox(
                             height: 20,
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2),
@@ -389,7 +389,7 @@ class _SignInPageState extends State<SignInPage> {
                             height: 20,
                             width: 20,
                           ),
-                    label: const Text(
+                    label: Text(
                       'Masuk dengan Google',
                       style: TextStyle(
                         color: Colors.black87,
@@ -399,13 +399,13 @@ class _SignInPageState extends State<SignInPage> {
                   ),
                 ),
 
-                const SizedBox(height: 24),
+                SizedBox(height: 24),
 
                 // Link Sign Up
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text(
+                    Text(
                       'Belum punya akun? ',
                       style: TextStyle(color: Colors.grey),
                     ),
@@ -416,7 +416,7 @@ class _SignInPageState extends State<SignInPage> {
                           builder: (context) => SignUpPage(),
                         ),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Sign up',
                         style: TextStyle(
                           color: Color(0xFFCF0F0F),
