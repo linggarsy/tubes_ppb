@@ -18,28 +18,47 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
   final ProgressService _progressService = ProgressService();
   int _totalLatihan = 0;
   double _totalKkal = 0;
-  int _totalMenit = 0;
-  
-  // Data untuk grafik berat badan
-  List<double> _beratBadanData = [150, 140, 135, 130, 128, 125, 122];
-  final List<String> _tanggal = ['09', '10', '11', '12', '13', '14', '15'];
-  
-  double _beratSaatIni = 122.0;
-  double _beratTertinggi = 150.0;
-  double _beratTerendah = 122.0;
-  
+  int _totalDetik = 0;
+
+  List<double> _beratBadanData = [];
+  List<String> _tanggal = [];
+
+  double _beratSaatIni = 0;
+  double _beratTertinggi = 0;
+  double _beratTerendah = 0;
+
   double _bmi = 0.0;
   double _tinggiBadan = 165;
+
+  // Durasi per hari dalam detik (sesuai daftar latihan)
+  final Map<String, int> _durasiPerHari = {
+    'Hari 1': 90,   // 20+20+30+20
+    'Hari 2': 80,   // 20+30+30
+    'Hari 3': 120,  // 30+30+30+30
+    'Hari 4': 110,  // 30+20+30+30
+    'Hari 5': 70,   // 30+20+20
+    'Hari 6': 120,  // 20+30+20+20+30
+    'Hari 7': 120,  // 30+30+30+30
+    'Hari 8': 90,   // 30+20+20+20
+    'Hari 9': 90,   // 30+20+30
+    'Hari 10': 140, // 20+30+30+30+30
+    'Hari 11': 70,  // 20+20+30
+    'Hari 12': 70,  // 20+30+20
+  };
+
+  // Kalori per detik latihan (estimasi)
+  static double _kkalPerDetik = 0.1;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
     _loadTinggiBadan();
+    _loadData();
   }
 
   Future<void> _loadTinggiBadan() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _tinggiBadan = prefs.getInt('user_tinggi')?.toDouble() ?? 165;
       _hitungBMI();
@@ -47,38 +66,58 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
   }
 
   void _hitungBMI() {
+    if (_beratSaatIni <= 0) return;
     double tinggiMeter = _tinggiBadan / 100;
     _bmi = _beratSaatIni / (tinggiMeter * tinggiMeter);
   }
 
   Future<void> _loadData() async {
-    try {
-      final apiService = Provider.of<ApiService>(context, listen: false);
+    final apiService = Provider.of<ApiService>(context, listen: false);
 
+    try {
       // Ambil progress dari MySQL
       final progressResult = await apiService.getProgress();
       if (progressResult['success'] == true) {
-        final total = progressResult['data']['total'] ?? 0;
+        final completedDays =
+            List<String>.from(progressResult['data']['completed_days'] ?? []);
+
+        // Hitung total detik dari hari yang sudah selesai
+        int totalDetik = 0;
+        for (final hari in completedDays) {
+          totalDetik += _durasiPerHari[hari] ?? 0;
+        }
+
+        if (!mounted) return;
         setState(() {
-          _totalLatihan = total;
-          _totalKkal = total * 85.5;
-          _totalMenit = total * 15;
+          _totalLatihan = completedDays.length;
+          _totalDetik = totalDetik;
+          _totalKkal = totalDetik * _kkalPerDetik;
         });
       }
 
       // Ambil riwayat berat dari MySQL
       final beratResult = await apiService.getRiwayatBerat();
       if (beratResult['success'] == true) {
-        final riwayat = beratResult['data']['riwayat'] as List;
+        final riwayat =
+            List<Map<String, dynamic>>.from(beratResult['data']['riwayat']);
+
         if (riwayat.isNotEmpty) {
+          final beratList =
+              riwayat.map((e) => (e['berat'] as num).toDouble()).toList();
+
+          // Ambil tanggal dari dicatat_at
+          final tanggalList = riwayat.map((e) {
+            final dicatatAt = e['dicatat_at'] as String;
+            return dicatatAt.substring(8, 10); // ambil hari saja
+          }).toList();
+
+          if (!mounted) return;
           setState(() {
-            _beratBadanData =
-                riwayat.map((e) => (e['berat'] as num).toDouble()).toList();
-            _beratSaatIni = _beratBadanData.last;
-            _beratTertinggi =
-                _beratBadanData.reduce((a, b) => a > b ? a : b);
-            _beratTerendah =
-                _beratBadanData.reduce((a, b) => a < b ? a : b);
+            _beratBadanData = beratList;
+            _tanggal = tanggalList;
+            _beratSaatIni = beratList.last;
+            _beratTertinggi = beratList.reduce((a, b) => a > b ? a : b);
+            _beratTerendah = beratList.reduce((a, b) => a < b ? a : b);
             _hitungBMI();
           });
         }
@@ -86,18 +125,25 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
     } catch (e) {
       // Fallback ke data lokal
       final completedDays = await _progressService.getCompletedDays();
+      int totalDetik = 0;
+      for (final hari in completedDays) {
+        totalDetik += _durasiPerHari[hari] ?? 0;
+      }
+      if (!mounted) return;
       setState(() {
         _totalLatihan = completedDays.length;
-        _totalKkal = completedDays.length * 85.5;
-        _totalMenit = completedDays.length * 15;
+        _totalDetik = totalDetik;
+        _totalKkal = totalDetik * _kkalPerDetik;
         _hitungBMI();
       });
     }
   }
 
   void _catatBeratBadan() {
+    final apiService = Provider.of<ApiService>(context, listen: false);
     final TextEditingController beratController = TextEditingController();
-    beratController.text = _beratSaatIni.toString();
+    beratController.text =
+        _beratSaatIni > 0 ? _beratSaatIni.toString() : '';
 
     showDialog(
       context: context,
@@ -123,7 +169,8 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
             SizedBox(height: 4),
             TextField(
               controller: beratController,
-              keyboardType: TextInputType.number,
+              keyboardType:
+                  TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 hintText: 'Contoh: 65.5',
                 border: OutlineInputBorder(
@@ -131,7 +178,8 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                 ),
                 suffixText: 'kg',
                 suffixStyle: TextStyle(color: Colors.grey),
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12),
               ),
             ),
           ],
@@ -142,39 +190,73 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
             child: Text('Batal'),
           ),
           ElevatedButton(
-            onPressed: () {
-              double beratBaru = double.tryParse(beratController.text) ?? _beratSaatIni;
-              if (beratBaru > 0) {
+            onPressed: () async {
+              double beratBaru =
+                  double.tryParse(beratController.text) ?? 0;
+              if (beratBaru <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Masukkan berat badan yang valid'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                return;
+              }
+
+              // Simpan ke MySQL
+              final result = await apiService.saveBerat(beratBaru);
+
+              if (!context.mounted) return;
+              Navigator.pop(context);
+
+              if (result['success'] == true) {
                 setState(() {
                   _beratSaatIni = beratBaru;
-                  
-                  // Update data grafik
                   _beratBadanData.add(beratBaru);
                   if (_beratBadanData.length > 7) {
                     _beratBadanData.removeAt(0);
                   }
-                  
-                  // Update tertinggi dan terendah
-                  if (beratBaru > _beratTertinggi) _beratTertinggi = beratBaru;
-                  if (beratBaru < _beratTerendah) _beratTerendah = beratBaru;
-                  
+                  if (beratBaru > _beratTertinggi) {
+                    _beratTertinggi = beratBaru;
+                  }
+                  if (_beratTerendah == 0 || beratBaru < _beratTerendah) {
+                    _beratTerendah = beratBaru;
+                  }
+
+                  // Update tanggal
+                  final now = DateTime.now();
+                  final hari = now.day.toString().padLeft(2, '0');
+                  _tanggal.add(hari);
+                  if (_tanggal.length > 7) _tanggal.removeAt(0);
+
                   _hitungBMI();
                 });
-                
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Berat badan berhasil dicatat: ${beratBaru.toStringAsFixed(1)} kg'),
+                    content: Text(
+                        'Berat badan berhasil dicatat: ${beratBaru.toStringAsFixed(1)} kg'),
                     backgroundColor: Colors.green,
                     duration: Duration(seconds: 2),
                   ),
                 );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content:
+                        Text(result['message'] ?? 'Gagal menyimpan berat'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
               }
-              Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFFCF0F0F),
             ),
-            child: Text('Simpan'),
+            child: Text('Simpan',
+            style: TextStyle(
+              color: Color(0xFFFFD5D5)
+            ),),
           ),
         ],
       ),
@@ -184,7 +266,8 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
   void _tambahBMI() {
     final TextEditingController beratController = TextEditingController();
     final TextEditingController tinggiController = TextEditingController();
-    beratController.text = _beratSaatIni.toString();
+    beratController.text =
+        _beratSaatIni > 0 ? _beratSaatIni.toString() : '';
     tinggiController.text = _tinggiBadan.toString();
 
     showDialog(
@@ -203,8 +286,6 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
               style: TextStyle(fontWeight: FontWeight.w500),
             ),
             SizedBox(height: 16),
-            
-            // Label Berat Badan
             Text(
               'Berat Badan',
               style: TextStyle(
@@ -216,21 +297,18 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
             SizedBox(height: 4),
             TextField(
               controller: beratController,
-              keyboardType: TextInputType.number,
+              keyboardType:
+                  TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                 hintText: 'Contoh: 65.5',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                    borderRadius: BorderRadius.circular(12)),
                 suffixText: 'kg',
-                suffixStyle: TextStyle(color: Colors.grey),
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12),
               ),
             ),
-            
             SizedBox(height: 16),
-            
-            // Label Tinggi Badan
             Text(
               'Tinggi Badan',
               style: TextStyle(
@@ -246,17 +324,13 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
               decoration: InputDecoration(
                 hintText: 'Contoh: 165',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                    borderRadius: BorderRadius.circular(12)),
                 suffixText: 'cm',
-                suffixStyle: TextStyle(color: Colors.grey),
-                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12),
               ),
             ),
-            
             SizedBox(height: 16),
-            
-            // Informasi tambahan
             Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -265,12 +339,14 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Color(0xFFCF0F0F), size: 16),
+                  Icon(Icons.info_outline,
+                      color: Color(0xFFCF0F0F), size: 16),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'BMI = Berat Badan (kg) / (Tinggi Badan (m) × Tinggi Badan (m))',
-                      style: TextStyle(fontSize: 10, color: Colors.grey),
+                      'BMI = Berat (kg) / (Tinggi (m) × Tinggi (m))',
+                      style:
+                          TextStyle(fontSize: 10, color: Colors.grey),
                     ),
                   ),
                 ],
@@ -285,58 +361,52 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
           ),
           ElevatedButton(
             onPressed: () {
-              double berat = double.tryParse(beratController.text) ?? _beratSaatIni;
-              double tinggi = double.tryParse(tinggiController.text) ?? _tinggiBadan;
-              
-              if (berat <= 0) {
+              double berat =
+                  double.tryParse(beratController.text) ?? 0;
+              double tinggi =
+                  double.tryParse(tinggiController.text) ?? 0;
+
+              if (berat <= 0 || tinggi <= 0) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text('Berat badan harus lebih dari 0'),
+                    content: Text('Masukkan data yang valid'),
                     backgroundColor: Colors.red,
-                    duration: Duration(seconds: 2),
                   ),
                 );
                 return;
               }
-              
-              if (tinggi <= 0) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Tinggi badan harus lebih dari 0'),
-                    backgroundColor: Colors.red,
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-                return;
-              }
-              
+
               setState(() {
                 _beratSaatIni = berat;
                 _tinggiBadan = tinggi;
                 _hitungBMI();
-                
-                // Update tertinggi/terendah
                 if (berat > _beratTertinggi) _beratTertinggi = berat;
-                if (berat < _beratTerendah) _beratTerendah = berat;
+                if (_beratTerendah == 0 || berat < _beratTerendah) {
+                  _beratTerendah = berat;
+                }
               });
-              
-              // Tampilkan hasil BMI dengan detail
+
               String status = _getBmiStatus(_bmi);
               String statusMessage;
               switch (status) {
                 case 'Kurus':
-                  statusMessage = 'Anda tergolong kurus. Disarankan untuk menambah berat badan.';
+                  statusMessage =
+                      'Anda tergolong kurus. Disarankan menambah berat badan.';
                   break;
                 case 'Normal':
                   statusMessage = 'Anda tergolong normal. Pertahankan!';
                   break;
                 case 'Gemuk':
-                  statusMessage = 'Anda tergolong gemuk. Mulai latihan yuk!';
+                  statusMessage =
+                      'Anda tergolong gemuk. Mulai latihan yuk!';
                   break;
                 default:
-                  statusMessage = 'Anda tergolong obesitas. Yuk mulai hidup sehat!';
+                  statusMessage =
+                      'Anda tergolong obesitas. Yuk mulai hidup sehat!';
               }
-              
+
+              Navigator.pop(context);
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Column(
@@ -347,23 +417,24 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                         'BMI: ${_bmi.toStringAsFixed(1)} ($status)',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      Text(
-                        statusMessage,
-                        style: TextStyle(fontSize: 12),
-                      ),
+                      Text(statusMessage,
+                          style: TextStyle(fontSize: 12)),
                     ],
                   ),
-                  backgroundColor: status == 'Normal' ? Colors.green : Color(0xFFCF0F0F),
+                  backgroundColor: status == 'Normal'
+                      ? Colors.green
+                      : Color(0xFFCF0F0F),
                   duration: Duration(seconds: 3),
                 ),
               );
-              
-              Navigator.pop(context);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Color(0xFFCF0F0F),
             ),
-            child: Text('Hitung'),
+            child: Text('Hitung',
+            style: TextStyle(
+              color: Color(0xFFFFD5D5)
+            ),),
           ),
         ],
       ),
@@ -393,7 +464,7 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                 ],
               ),
             ),
-            
+
             Expanded(
               child: ListView(
                 padding: EdgeInsets.symmetric(horizontal: 24),
@@ -423,9 +494,7 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                             Text(
                               'LATIHAN',
                               style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
+                                  color: Colors.white70, fontSize: 12),
                             ),
                           ],
                         ),
@@ -433,7 +502,7 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                         Column(
                           children: [
                             Text(
-                              '${_totalKkal.toStringAsFixed(1)}',
+                              _totalKkal.toStringAsFixed(1),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 24,
@@ -444,17 +513,15 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                             Text(
                               'KKAL',
                               style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
+                                  color: Colors.white70, fontSize: 12),
                             ),
                           ],
                         ),
-                        // Total Menit
+                        // Total Waktu
                         Column(
                           children: [
                             Text(
-                              _formatMenit(_totalMenit),
+                              _formatDetik(_totalDetik),
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 24,
@@ -463,20 +530,18 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                             ),
                             SizedBox(height: 4),
                             Text(
-                              'MENIT',
+                              'WAKTU',
                               style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                              ),
+                                  color: Colors.white70, fontSize: 12),
                             ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  
+
                   SizedBox(height: 24),
-                  
+
                   // Berat Badan Section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -492,7 +557,8 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                       GestureDetector(
                         onTap: _catatBeratBadan,
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: Color(0xFFCF0F0F),
                             borderRadius: BorderRadius.circular(20),
@@ -501,22 +567,18 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                             children: [
                               Icon(Icons.edit, color: Colors.white, size: 14),
                               SizedBox(width: 4),
-                              Text(
-                                'Catat',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
-                              ),
+                              Text('Catat',
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 12)),
                             ],
                           ),
                         ),
                       ),
                     ],
                   ),
-                  
+
                   SizedBox(height: 16),
-                  
+
                   // Grafik Berat Badan
                   Container(
                     height: 200,
@@ -525,108 +587,136 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                       color: Color(0xFFF5F5F5),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: LineChart(
-                      LineChartData(
-                        gridData: FlGridData(
-                          show: true,
-                          horizontalInterval: 30,
-                          getDrawingHorizontalLine: (value) {
-                            return FlLine(
-                              color: Colors.grey.shade300,
-                              strokeWidth: 1,
-                            );
-                          },
-                        ),
-                        titlesData: FlTitlesData(
-                          leftTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 40,
-                              getTitlesWidget: (value, meta) {
-                                return Text(
-                                  '${value.toInt()}',
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Colors.grey,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                          bottomTitles: AxisTitles(
-                            sideTitles: SideTitles(
-                              showTitles: true,
-                              reservedSize: 30,
-                              getTitlesWidget: (value, meta) {
-                                int index = value.toInt();
-                                if (index >= 0 && index < _tanggal.length) {
-                                  return Text(
-                                    _tanggal[index],
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.grey,
+                    child: _beratBadanData.length >= 2
+                        ? LineChart(
+                            LineChartData(
+                              gridData: FlGridData(
+                                show: true,
+                                horizontalInterval: 10,
+                                getDrawingHorizontalLine: (value) => FlLine(
+                                  color: Colors.grey.shade300,
+                                  strokeWidth: 1,
+                                ),
+                              ),
+                              titlesData: FlTitlesData(
+                                leftTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    reservedSize: 40,
+                                    getTitlesWidget: (value, meta) => Text(
+                                      '${value.toInt()}',
+                                      style: TextStyle(
+                                          fontSize: 10, color: Colors.grey),
                                     ),
-                                  );
-                                }
-                                return Text('');
-                              },
-                            ),
-                          ),
-                          rightTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                          topTitles: AxisTitles(
-                            sideTitles: SideTitles(showTitles: false),
-                          ),
-                        ),
-                        borderData: FlBorderData(show: false),
-                        minX: 0,
-                        maxX: (_beratBadanData.length - 1).toDouble(),
-                        minY: (_beratBadanData.reduce((a, b) => a < b ? a : b) - 10).clamp(20, 200),
-                        maxY: (_beratBadanData.reduce((a, b) => a > b ? a : b) + 10).clamp(30, 250),
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: _beratBadanData.asMap().entries.map((e) {
-                              return FlSpot(e.key.toDouble(), e.value);
-                            }).toList(),
-                            isCurved: true,
-                            color: Color(0xFFCF0F0F),
-                            barWidth: 3,
-                            dotData: FlDotData(
-                              show: true,
-                              getDotPainter: (spot, percent, barData, index) {
-                                return FlDotCirclePainter(
-                                  radius: 4,
+                                  ),
+                                ),
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    reservedSize: 30,
+                                    getTitlesWidget: (value, meta) {
+                                      int index = value.toInt();
+                                      if (index >= 0 &&
+                                          index < _tanggal.length) {
+                                        return Text(
+                                          _tanggal[index],
+                                          style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey),
+                                        );
+                                      }
+                                      return Text('');
+                                    },
+                                  ),
+                                ),
+                                rightTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
+                                topTitles: AxisTitles(
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
+                              ),
+                              borderData: FlBorderData(show: false),
+                              minX: 0,
+                              maxX:
+                                  (_beratBadanData.length - 1).toDouble(),
+                              minY: (_beratBadanData.reduce(
+                                          (a, b) => a < b ? a : b) -
+                                      10)
+                                  .clamp(20, 200),
+                              maxY: (_beratBadanData.reduce(
+                                          (a, b) => a > b ? a : b) +
+                                      10)
+                                  .clamp(30, 250),
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: _beratBadanData
+                                      .asMap()
+                                      .entries
+                                      .map((e) => FlSpot(
+                                          e.key.toDouble(), e.value))
+                                      .toList(),
+                                  isCurved: true,
                                   color: Color(0xFFCF0F0F),
-                                  strokeWidth: 2,
-                                  strokeColor: Colors.white,
-                                );
-                              },
+                                  barWidth: 3,
+                                  dotData: FlDotData(
+                                    show: true,
+                                    getDotPainter:
+                                        (spot, percent, barData, index) =>
+                                            FlDotCirclePainter(
+                                      radius: 4,
+                                      color: Color(0xFFCF0F0F),
+                                      strokeWidth: 2,
+                                      strokeColor: Colors.white,
+                                    ),
+                                  ),
+                                  belowBarData: BarAreaData(
+                                    show: true,
+                                    color: Color(0xFFCF0F0F)
+                                        .withOpacity(0.1),
+                                  ),
+                                ),
+                              ],
                             ),
-                            belowBarData: BarAreaData(
-                              show: true,
-                              color: Color(0xFFCF0F0F).withOpacity(0.1),
+                          )
+                        : Center(
+                            child: Text(
+                              'Belum ada data berat badan.\nCatat berat badan Anda!',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey),
                             ),
                           ),
-                        ],
-                      ),
-                    ),
                   ),
-                  
+
                   SizedBox(height: 24),
-                  
+
                   // Statistik Berat Badan
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildBeratCard('Saat ini', '${_beratSaatIni.toStringAsFixed(1)}kg', Color(0xFFCF0F0F)),
-                      _buildBeratCard('Tertinggi', '${_beratTertinggi.toStringAsFixed(1)}kg', Colors.orange),
-                      _buildBeratCard('Terendah', '${_beratTerendah.toStringAsFixed(1)}kg', Colors.green),
+                      _buildBeratCard(
+                          'Saat ini',
+                          _beratSaatIni > 0
+                              ? '${_beratSaatIni.toStringAsFixed(1)}kg'
+                              : '-',
+                          Color(0xFFCF0F0F)),
+                      _buildBeratCard(
+                          'Tertinggi',
+                          _beratTertinggi > 0
+                              ? '${_beratTertinggi.toStringAsFixed(1)}kg'
+                              : '-',
+                          Colors.orange),
+                      _buildBeratCard(
+                          'Terendah',
+                          _beratTerendah > 0
+                              ? '${_beratTerendah.toStringAsFixed(1)}kg'
+                              : '-',
+                          Colors.green),
                     ],
                   ),
-                  
+
                   SizedBox(height: 24),
-                  
+
                   // BMI Section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -642,7 +732,8 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                       GestureDetector(
                         onTap: _tambahBMI,
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
                             color: Color(0xFFCF0F0F),
                             borderRadius: BorderRadius.circular(20),
@@ -651,22 +742,18 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                             children: [
                               Icon(Icons.add, color: Colors.white, size: 14),
                               SizedBox(width: 4),
-                              Text(
-                                'Tambah',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
-                              ),
+                              Text('Tambah',
+                                  style: TextStyle(
+                                      color: Colors.white, fontSize: 12)),
                             ],
                           ),
                         ),
                       ),
                     ],
                   ),
-                  
+
                   SizedBox(height: 16),
-                  
+
                   // BMI Card
                   Container(
                     padding: EdgeInsets.all(20),
@@ -684,7 +771,7 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                     child: Column(
                       children: [
                         Text(
-                          _bmi.toStringAsFixed(1),
+                          _bmi > 0 ? _bmi.toStringAsFixed(1) : '-',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 36,
@@ -693,16 +780,15 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          _getBmiStatus(_bmi),
+                          _bmi > 0 ? _getBmiStatus(_bmi) : 'Belum ada data',
                           style: TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
-                          ),
+                              color: Colors.white70, fontSize: 14),
                         ),
                         SizedBox(height: 8),
                         LinearProgressIndicator(
-                          value: _getBmiProgress(_bmi),
-                          backgroundColor: Colors.white.withOpacity(0.3),
+                          value: _bmi > 0 ? _getBmiProgress(_bmi) : 0,
+                          backgroundColor:
+                              Colors.white.withOpacity(0.3),
                           color: Colors.white,
                           minHeight: 6,
                           borderRadius: BorderRadius.circular(3),
@@ -711,33 +797,29 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'Kurus',
-                              style: TextStyle(color: Colors.white70, fontSize: 10),
-                            ),
-                            Text(
-                              'Normal',
-                              style: TextStyle(color: Colors.white70, fontSize: 10),
-                            ),
-                            Text(
-                              'Gemuk',
-                              style: TextStyle(color: Colors.white70, fontSize: 10),
-                            ),
-                            Text(
-                              'Obesitas',
-                              style: TextStyle(color: Colors.white70, fontSize: 10),
-                            ),
+                            Text('Kurus',
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 10)),
+                            Text('Normal',
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 10)),
+                            Text('Gemuk',
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 10)),
+                            Text('Obesitas',
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 10)),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  
+
                   SizedBox(height: 80),
                 ],
               ),
             ),
-            
+
             // Bottom Navigation Bar
             Container(
               decoration: BoxDecoration(
@@ -755,13 +837,17 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
                 ],
               ),
               child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 32, vertical: 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildBottomNavItem(Icons.home, 'Beranda', false, context),
-                    _buildBottomNavItem(Icons.bar_chart, 'Laporkan', true, context),
-                    _buildBottomNavItem(Icons.person, 'Saya', false, context),
+                    _buildBottomNavItem(
+                        Icons.home, 'Beranda', false, context),
+                    _buildBottomNavItem(
+                        Icons.bar_chart, 'Laporkan', true, context),
+                    _buildBottomNavItem(
+                        Icons.person, 'Saya', false, context),
                   ],
                 ),
               ),
@@ -784,35 +870,27 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
         ),
         child: Column(
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: color,
-                fontSize: 12,
-              ),
-            ),
+            Text(label, style: TextStyle(color: color, fontSize: 12)),
             SizedBox(height: 4),
-            Text(
-              value,
-              style: TextStyle(
-                color: color,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            Text(value,
+                style: TextStyle(
+                    color: color,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold)),
           ],
         ),
       ),
     );
   }
 
-  String _formatMenit(int totalMenit) {
-    int jam = totalMenit ~/ 60;
-    int menit = totalMenit % 60;
-    if (jam > 0) {
-      return '${jam.toString().padLeft(2, '0')}:${menit.toString().padLeft(2, '0')}';
-    }
-    return '${menit.toString().padLeft(2, '0')}:00';
+  // Format detik → "1m 30d" atau "90d"
+  String _formatDetik(int totalDetik) {
+    if (totalDetik == 0) return '0d';
+    int menit = totalDetik ~/ 60;
+    int detik = totalDetik % 60;
+    if (menit > 0 && detik > 0) return '${menit}m ${detik}d';
+    if (menit > 0) return '${menit}m';
+    return '${detik}d';
   }
 
   String _getBmiStatus(double bmi) {
@@ -826,10 +904,11 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
     if (bmi < 18.5) return bmi / 18.5 * 0.25;
     if (bmi < 25.0) return 0.25 + (bmi - 18.5) / 6.5 * 0.25;
     if (bmi < 30.0) return 0.5 + (bmi - 25.0) / 5.0 * 0.25;
-    return 0.75 + (bmi - 30.0) / 10.0 * 0.25;
+    return (0.75 + (bmi - 30.0) / 10.0 * 0.25).clamp(0.75, 1.0);
   }
 
-  Widget _buildBottomNavItem(IconData icon, String label, bool isActive, BuildContext context) {
+  Widget _buildBottomNavItem(
+      IconData icon, String label, bool isActive, BuildContext context) {
     return InkWell(
       onTap: () {
         if (!isActive) {
@@ -849,19 +928,14 @@ class _HalamanLaporkanState extends State<HalamanLaporkan> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            color: isActive ? Color(0xFFCF0F0F) : Colors.grey,
-            size: 24,
-          ),
-          SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
+          Icon(icon,
               color: isActive ? Color(0xFFCF0F0F) : Colors.grey,
-              fontSize: 12,
-            ),
-          ),
+              size: 24),
+          SizedBox(height: 4),
+          Text(label,
+              style: TextStyle(
+                  color: isActive ? Color(0xFFCF0F0F) : Colors.grey,
+                  fontSize: 12)),
         ],
       ),
     );

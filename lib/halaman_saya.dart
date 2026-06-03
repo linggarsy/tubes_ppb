@@ -40,34 +40,33 @@ class _HalamanSayaState extends State<HalamanSaya> {
   }
 
   void _resetProgress(BuildContext context) {
+    // Simpan reference sebelum async
+    final apiService = Provider.of<ApiService>(context, listen: false);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Atur Ulang Perkembangan'),
-        content: const Text(
+        title: Text('Atur Ulang Perkembangan'),
+        content: Text(
             'Apakah Anda yakin ingin mengatur ulang semua progress latihan? Tindakan ini tidak dapat dibatalkan.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
+            child: Text('Batal'),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
 
               try {
-                // Reset di MySQL
-                final apiService =
-                    Provider.of<ApiService>(context, listen: false);
                 await apiService.resetProgress();
 
-                // Reset di SharedPreferences
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.remove('completed_days');
 
                 if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
+                  SnackBar(
                     content: Text('Progress berhasil diatur ulang'),
                     backgroundColor: Colors.green,
                     duration: Duration(seconds: 2),
@@ -84,7 +83,7 @@ class _HalamanSayaState extends State<HalamanSaya> {
               }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Reset'),
+            child: Text('Reset'),
           ),
         ],
       ),
@@ -92,32 +91,28 @@ class _HalamanSayaState extends State<HalamanSaya> {
   }
 
   void _logout(BuildContext context) {
+    // Simpan reference sebelum async
+    final authService = Provider.of<AuthService>(context, listen: false);
+    final apiService = Provider.of<ApiService>(context, listen: false);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Apakah Anda yakin ingin keluar dari akun?'),
+        title: Text('Logout'),
+        content: Text('Apakah Anda yakin ingin keluar dari akun?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
+            child: Text('Batal'),
           ),
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
 
               try {
-                // Logout Firebase
-                final authService =
-                    Provider.of<AuthService>(context, listen: false);
                 await authService.signOut();
-
-                // Clear session API
-                final apiService =
-                    Provider.of<ApiService>(context, listen: false);
                 await apiService.clearSession();
 
-                // Clear SharedPreferences
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.clear();
 
@@ -125,7 +120,7 @@ class _HalamanSayaState extends State<HalamanSaya> {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const SignInPage()),
+                      builder: (context) => SignInPage()),
                   (route) => false,
                 );
               } catch (e) {
@@ -139,7 +134,7 @@ class _HalamanSayaState extends State<HalamanSaya> {
               }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Logout'),
+            child: Text('Logout'),
           ),
         ],
       ),
@@ -150,12 +145,13 @@ class _HalamanSayaState extends State<HalamanSaya> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Hitung Mundur'),
+        title: Text('Hitung Mundur'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Pilih durasi hitungan mundur sebelum latihan dimulai:'),
-            const SizedBox(height: 16),
+            Text(
+                'Pilih durasi hitungan mundur sebelum latihan dimulai:'),
+            SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -170,7 +166,7 @@ class _HalamanSayaState extends State<HalamanSaya> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Tutup'),
+            child: Text('Tutup'),
           ),
         ],
       ),
@@ -180,14 +176,15 @@ class _HalamanSayaState extends State<HalamanSaya> {
   Widget _buildDurationButton(int duration) {
     bool isSelected = _hitunganMundur == duration;
     return GestureDetector(
-      onTap: () {
-        _saveHitunganMundur(duration);
+      onTap: () async {
+        await _saveHitunganMundur(duration);
+        if (!context.mounted) return;
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Hitung mundur diubah menjadi ${duration} detik'),
             backgroundColor: Colors.green,
-            duration: const Duration(seconds: 1),
+            duration: Duration(seconds: 1),
           ),
         );
       },
@@ -195,7 +192,7 @@ class _HalamanSayaState extends State<HalamanSaya> {
         width: 50,
         height: 50,
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFCF0F0F) : Colors.grey.shade200,
+          color: isSelected ? Color(0xFFCF0F0F) : Colors.grey.shade200,
           shape: BoxShape.circle,
         ),
         child: Center(
@@ -219,10 +216,10 @@ class _HalamanSayaState extends State<HalamanSaya> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(24.0),
               child: Row(
                 children: [
-                  const Text(
+                  Text(
                     'Saya',
                     style: TextStyle(
                       color: Color(0xFFCF0F0F),
@@ -233,12 +230,12 @@ class _HalamanSayaState extends State<HalamanSaya> {
                 ],
               ),
             ),
-            
+
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: 24),
                 children: [
-                  const Text(
+                  Text(
                     'SETELAN UMUM',
                     style: TextStyle(
                       color: Color(0xFFCF0F0F),
@@ -246,64 +243,47 @@ class _HalamanSayaState extends State<HalamanSaya> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  
+                  SizedBox(height: 8),
+
                   Container(
                     decoration: BoxDecoration(
                       border: Border(
-                        bottom: BorderSide(color: Colors.grey.shade200),
-                      ),
+                          bottom: BorderSide(color: Colors.grey.shade200)),
                     ),
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text(
-                        'Profil Saya',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
+                      title: Text('Profil Saya',
+                          style:
+                              TextStyle(fontSize: 16, color: Colors.black87)),
+                      trailing: Icon(Icons.chevron_right,
+                          color: Colors.grey),
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => ProfilSayaPage()),
                       ),
-                      trailing: const Icon(
-                        Icons.chevron_right,
-                        color: Colors.grey,
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const ProfilSayaPage(),
-                          ),
-                        );
-                      },
                     ),
                   ),
-                  
+
                   Container(
                     decoration: BoxDecoration(
                       border: Border(
-                        bottom: BorderSide(color: Colors.grey.shade200),
-                      ),
+                          bottom: BorderSide(color: Colors.grey.shade200)),
                     ),
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text(
-                        'Atur Ulang Perkembangan',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      trailing: const Icon(
-                        Icons.chevron_right,
-                        color: Colors.grey,
-                      ),
+                      title: Text('Atur Ulang Perkembangan',
+                          style:
+                              TextStyle(fontSize: 16, color: Colors.black87)),
+                      trailing: Icon(Icons.chevron_right,
+                          color: Colors.grey),
                       onTap: () => _resetProgress(context),
                     ),
                   ),
-                  
-                  const SizedBox(height: 24),
-                  
-                  const Text(
+
+                  SizedBox(height: 24),
+
+                  Text(
                     'PENGATURAN LATIHAN',
                     style: TextStyle(
                       color: Color(0xFFCF0F0F),
@@ -311,75 +291,59 @@ class _HalamanSayaState extends State<HalamanSaya> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  
+                  SizedBox(height: 8),
+
                   Container(
                     decoration: BoxDecoration(
                       border: Border(
-                        bottom: BorderSide(color: Colors.grey.shade200),
-                      ),
+                          bottom: BorderSide(color: Colors.grey.shade200)),
                     ),
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text(
-                        'Hitung Mundur',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.black87,
-                        ),
-                      ),
+                      title: Text('Hitung Mundur',
+                          style:
+                              TextStyle(fontSize: 16, color: Colors.black87)),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
                             '${_hitunganMundur}s',
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 14,
-                            ),
+                            style: TextStyle(
+                                color: Colors.grey, fontSize: 14),
                           ),
-                          const Icon(
-                            Icons.chevron_right,
-                            color: Colors.grey,
-                          ),
+                          Icon(Icons.chevron_right, color: Colors.grey),
                         ],
                       ),
                       onTap: _showHitunganMundurDialog,
                     ),
                   ),
-                  
+
                   Container(
                     decoration: BoxDecoration(
                       border: Border(
-                        bottom: BorderSide(color: Colors.grey.shade200),
-                      ),
+                          bottom: BorderSide(color: Colors.grey.shade200)),
                     ),
                     child: ListTile(
                       contentPadding: EdgeInsets.zero,
-                      title: const Text(
-                        'Logout',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.red,
-                        ),
-                      ),
-                      trailing: const Icon(
-                        Icons.logout,
-                        color: Colors.red,
-                      ),
+                      title: Text('Logout',
+                          style:
+                              TextStyle(fontSize: 16, color: Colors.red)),
+                      trailing:
+                          Icon(Icons.logout, color: Colors.red),
                       onTap: () => _logout(context),
                     ),
                   ),
-                  
-                  const SizedBox(height: 80),
+
+                  SizedBox(height: 80),
                 ],
               ),
             ),
-            
+
+            // Bottom Navigation
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
@@ -387,18 +351,22 @@ class _HalamanSayaState extends State<HalamanSaya> {
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 10,
-                    offset: const Offset(0, -5),
+                    offset: Offset(0, -5),
                   ),
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 32, vertical: 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildBottomNavItem(Icons.home, 'Beranda', false, context, '/beranda'),
-                    _buildBottomNavItem(Icons.bar_chart, 'Laporkan', false, context, '/laporkan'),
-                    _buildBottomNavItem(Icons.person, 'Saya', true, context, '/saya'),
+                    _buildBottomNavItem(
+                        Icons.home, 'Beranda', false, context, '/beranda'),
+                    _buildBottomNavItem(Icons.bar_chart, 'Laporkan', false,
+                        context, '/laporkan'),
+                    _buildBottomNavItem(
+                        Icons.person, 'Saya', true, context, '/saya'),
                   ],
                 ),
               ),
@@ -409,7 +377,8 @@ class _HalamanSayaState extends State<HalamanSaya> {
     );
   }
 
-  Widget _buildBottomNavItem(IconData icon, String label, bool isActive, BuildContext context, String route) {
+  Widget _buildBottomNavItem(IconData icon, String label, bool isActive,
+      BuildContext context, String route) {
     return InkWell(
       onTap: () {
         if (!isActive) {
@@ -421,7 +390,8 @@ class _HalamanSayaState extends State<HalamanSaya> {
           } else if (route == '/laporkan') {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const HalamanLaporkan()),
+              MaterialPageRoute(
+                  builder: (context) => HalamanLaporkan()),
             );
           }
         }
@@ -431,14 +401,14 @@ class _HalamanSayaState extends State<HalamanSaya> {
         children: [
           Icon(
             icon,
-            color: isActive ? const Color(0xFFCF0F0F) : Colors.grey,
+            color: isActive ? Color(0xFFCF0F0F) : Colors.grey,
             size: 24,
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              color: isActive ? const Color(0xFFCF0F0F) : Colors.grey,
+              color: isActive ? Color(0xFFCF0F0F) : Colors.grey,
               fontSize: 12,
             ),
           ),

@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   // Ganti IP sesuai IP komputer kamu
-  static const String baseUrl = 'http://192.168.1.13/tubes_ppb_backend';
+  static const String baseUrl = 'http://192.168.1.210/tubes_ppb_backend';
 
   // Key SharedPreferences
   static const String _keyUserId = 'api_user_id';
