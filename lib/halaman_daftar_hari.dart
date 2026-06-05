@@ -106,27 +106,27 @@ class _DaftarHariPageState extends State<DaftarHariPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFFCF0F0F)),
+          icon: Icon(Icons.arrow_back, color: Color(0xFFCF0F0F)),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Daftar Tantangan',
           style: TextStyle(color: Color(0xFFCF0F0F)),
         ),
         centerTitle: true,
       ),
       body: _isLoading
-          ? const Center(
+          ? Center(
               child: CircularProgressIndicator(color: Color(0xFFCF0F0F)),
             )
           : Column(
               children: [
                 // Progress Card
                 Container(
-                  margin: const EdgeInsets.all(24),
-                  padding: const EdgeInsets.all(16),
+                  margin: EdgeInsets.all(24),
+                  padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFCF0F0F),
+                    color: Color(0xFFCF0F0F),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -137,7 +137,7 @@ class _DaftarHariPageState extends State<DaftarHariPage> {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
+                              Text(
                                 'Turunkan berat badan & jaga fit',
                                 style: TextStyle(
                                   color: Colors.white,
@@ -145,10 +145,10 @@ class _DaftarHariPageState extends State<DaftarHariPage> {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: 8),
                               Text(
                                 '${_completedDays.length}/$_totalHari hari selesai',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 14,
                                 ),
@@ -158,14 +158,14 @@ class _DaftarHariPageState extends State<DaftarHariPage> {
                           Container(
                             width: 56,
                             height: 56,
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               color: Colors.white,
                               shape: BoxShape.circle,
                             ),
                             child: Center(
                               child: Text(
                                 '${(_progressPercent * 100).toInt()}%',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Color(0xFFCF0F0F),
                                   fontWeight: FontWeight.bold,
                                   fontSize: 14,
@@ -175,7 +175,7 @@ class _DaftarHariPageState extends State<DaftarHariPage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12),
                       // Progress bar
                       ClipRRect(
                         borderRadius: BorderRadius.circular(4),
@@ -194,30 +194,30 @@ class _DaftarHariPageState extends State<DaftarHariPage> {
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: _loadProgress,
-                    color: const Color(0xFFCF0F0F),
+                    color: Color(0xFFCF0F0F),
                     child: ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      padding: EdgeInsets.symmetric(horizontal: 24),
                       children: [
                         _buildWeekSection(
                             'MINGGU 1',
                             ['Hari 1', 'Hari 2', 'Hari 3'],
                             context),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         _buildWeekSection(
                             'MINGGU 2',
                             ['Hari 4', 'Hari 5', 'Hari 6'],
                             context),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         _buildWeekSection(
                             'MINGGU 3',
                             ['Hari 7', 'Hari 8', 'Hari 9'],
                             context),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                         _buildWeekSection(
                             'MINGGU 4',
                             ['Hari 10', 'Hari 11', 'Hari 12'],
                             context),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                       ],
                     ),
                   ),
@@ -234,13 +234,13 @@ class _DaftarHariPageState extends State<DaftarHariPage> {
       children: [
         Text(
           weekTitle,
-          style: const TextStyle(
+          style: TextStyle(
             color: Color(0xFFCF0F0F),
             fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 12),
         ...days.map((day) => _buildDayCard(day, context)),
       ],
     );
@@ -268,10 +268,10 @@ class _DaftarHariPageState extends State<DaftarHariPage> {
       statusIcon = Icons.check_circle;
     } else if (isUnlocked) {
       // Belum selesai tapi bisa diklik → merah
-      cardColor = const Color(0xFFCF0F0F);
+      cardColor = Color(0xFFCF0F0F);
       textColor = Colors.white;
       buttonColor = Colors.white;
-      buttonTextColor = const Color(0xFFCF0F0F);
+      buttonTextColor = Color(0xFFCF0F0F);
       buttonLabel = 'Mulai';
       statusIcon = null;
     } else {
@@ -285,8 +285,8 @@ class _DaftarHariPageState extends State<DaftarHariPage> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(12),
@@ -299,7 +299,7 @@ class _DaftarHariPageState extends State<DaftarHariPage> {
               // Icon status
               if (statusIcon != null) ...[
                 Icon(statusIcon, color: textColor, size: 20),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
               ],
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,7 +312,7 @@ class _DaftarHariPageState extends State<DaftarHariPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4),
                   Text(
                     '${jumlahLatihan[dayTitle]} Latihan',
                     style: TextStyle(

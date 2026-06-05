@@ -42,20 +42,20 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Tubes PPB',
         theme: ThemeData(
-          primaryColor: const Color(0xFFCF0F0F),
+          primaryColor: Color(0xFFCF0F0F),
           fontFamily: 'Poppins',
         ),
         debugShowCheckedModeBanner: false,
         initialRoute: '/',
         routes: {
-          '/': (context) => const AuthWrapper(),
+          '/': (context) => AuthWrapper(),
           '/signin': (context) => SignInPage(),
           '/signup': (context) => SignUpPage(),
           '/berat': (context) => BeratBadanPage(),
           '/beranda': (context) => BerandaPage(),
           '/daftar-hari': (context) => DaftarHariPage(),
-          '/laporkan': (context) => const HalamanLaporkan(),
-          '/saya': (context) => const HalamanSaya(),
+          '/laporkan': (context) => HalamanLaporkan(),
+          '/saya': (context) => HalamanSaya(),
         },
       ),
     );
@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
 }
 
 class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
+  AuthWrapper({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +74,7 @@ class AuthWrapper extends StatelessWidget {
       builder: (context, snapshot) {
         // Loading Firebase
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
+          return Scaffold(
             body: Center(
               child: CircularProgressIndicator(color: Color(0xFFCF0F0F)),
             ),
@@ -89,7 +89,7 @@ class AuthWrapper extends StatelessWidget {
 
         // Sudah login via Firebase
         if (snapshot.hasData && snapshot.data != null) {
-          return const _CheckUserDataPage();
+          return _CheckUserDataPage();
         }
 
         // Belum login
@@ -101,7 +101,7 @@ class AuthWrapper extends StatelessWidget {
 
 // Widget terpisah untuk cek data user dari MySQL
 class _CheckUserDataPage extends StatefulWidget {
-  const _CheckUserDataPage();
+  _CheckUserDataPage();
 
   @override
   State<_CheckUserDataPage> createState() => _CheckUserDataPageState();
@@ -171,7 +171,7 @@ class _CheckUserDataPageState extends State<_CheckUserDataPage> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,

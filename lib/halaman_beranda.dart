@@ -137,14 +137,14 @@ class _BerandaPageState extends State<BerandaPage> {
           children: [
             // Header
             Padding(
-              padding: const EdgeInsets.all(24.0),
+              padding: EdgeInsets.all(24.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Kurangi berat',
                         style: TextStyle(
                           color: Color(0xFFCF0F0F),
@@ -152,12 +152,12 @@ class _BerandaPageState extends State<BerandaPage> {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: 4),
                       Text(
                         _nama.isNotEmpty
                             ? 'Selamat datang, $_nama! 👋'
                             : 'Selamat datang! 👋',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Color(0xFFCF0F0F),
                           fontSize: 12,
                         ),
@@ -176,12 +176,12 @@ class _BerandaPageState extends State<BerandaPage> {
                       });
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFCF0F0F),
+                        color: Color(0xFFCF0F0F),
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.account_circle_rounded,
                         color: Colors.white,
                         size: 24,
@@ -194,22 +194,22 @@ class _BerandaPageState extends State<BerandaPage> {
 
             // Tantangan Aktif Card
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              padding: EdgeInsets.symmetric(horizontal: 24.0),
               child: Container(
-                padding: const EdgeInsets.all(20),
+                padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFCF0F0F),
+                  color: Color(0xFFCF0F0F),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Tantangan Aktif',
                       style: TextStyle(color: Colors.white, fontSize: 14),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
+                    SizedBox(height: 8),
+                    Text(
                       'Turunkan berat badan & jaga fit',
                       style: TextStyle(
                         color: Colors.white,
@@ -217,9 +217,9 @@ class _BerandaPageState extends State<BerandaPage> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    SizedBox(height: 20),
                     Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
@@ -232,7 +232,7 @@ class _BerandaPageState extends State<BerandaPage> {
                             children: [
                               Text(
                                 _hariBerikutnya.toUpperCase(),
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Color(0xFFCF0F0F),
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
@@ -242,7 +242,7 @@ class _BerandaPageState extends State<BerandaPage> {
                                 _totalHariSelesai >= _totalHari
                                     ? 'Semua selesai! 🎉'
                                     : '$_hariTersisa hari tersisa',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   color: Color(0xFFCF0F0F),
                                   fontSize: 14,
                                 ),
@@ -259,15 +259,15 @@ class _BerandaPageState extends State<BerandaPage> {
                               ).then((_) => _loadUserData());
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFCF0F0F),
+                              backgroundColor: Color(0xFFCF0F0F),
                               foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
+                              padding: EdgeInsets.symmetric(
                                   horizontal: 24, vertical: 12),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8),
                               ),
                             ),
-                            child: const Text(
+                            child: Text(
                               'MULAI',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
@@ -280,15 +280,15 @@ class _BerandaPageState extends State<BerandaPage> {
               ),
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
 
             // Pemanasan Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              padding: EdgeInsets.symmetric(horizontal: 24.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Pemanasan',
                     style: TextStyle(
                       color: Color(0xFFCF0F0F),
@@ -298,7 +298,7 @@ class _BerandaPageState extends State<BerandaPage> {
                   ),
                   TextButton(
                     onPressed: () => _startPemanasan(context),
-                    child: const Text(
+                    child: Text(
                       'Mulai Semua',
                       style: TextStyle(
                         color: Color(0xFFCF0F0F),
@@ -313,12 +313,12 @@ class _BerandaPageState extends State<BerandaPage> {
             // List Pemanasan
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+                padding: EdgeInsets.symmetric(horizontal: 24),
                 children: [
                   // Info box
                   Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(12),
+                    margin: EdgeInsets.only(bottom: 16),
+                    padding: EdgeInsets.all(12),
                     decoration: BoxDecoration(
                       color: Colors.orange.shade50,
                       borderRadius: BorderRadius.circular(12),
@@ -328,7 +328,7 @@ class _BerandaPageState extends State<BerandaPage> {
                       children: [
                         Icon(Icons.info_outline,
                             color: Colors.orange.shade700),
-                        const SizedBox(width: 12),
+                        SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             'Lakukan pemanasan terlebih dahulu untuk mencegah cedera!',
@@ -352,11 +352,11 @@ class _BerandaPageState extends State<BerandaPage> {
                         context,
                       )),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16),
 
                   // Tombol Mulai Latihan Utama
                   Container(
-                    margin: const EdgeInsets.only(bottom: 24),
+                    margin: EdgeInsets.only(bottom: 24),
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.push(
@@ -367,14 +367,14 @@ class _BerandaPageState extends State<BerandaPage> {
                         ).then((_) => _loadUserData());
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFCF0F0F),
+                        backgroundColor: Color(0xFFCF0F0F),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.fitness_center),
@@ -398,7 +398,7 @@ class _BerandaPageState extends State<BerandaPage> {
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: const BorderRadius.only(
+                borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
@@ -406,12 +406,12 @@ class _BerandaPageState extends State<BerandaPage> {
                   BoxShadow(
                     color: Colors.black.withOpacity(0.1),
                     blurRadius: 10,
-                    offset: const Offset(0, -5),
+                    offset: Offset(0, -5),
                   ),
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
+                padding: EdgeInsets.symmetric(
                     horizontal: 32, vertical: 12),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -441,40 +441,40 @@ class _BerandaPageState extends State<BerandaPage> {
     BuildContext context,
   ) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF5F5F5),
+        color: Color(0xFFF5F5F5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: const Color(0xFFCF0F0F).withOpacity(0.1),
+              color: Color(0xFFCF0F0F).withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: const Color(0xFFCF0F0F), size: 24),
+            child: Icon(icon, color: Color(0xFFCF0F0F), size: 24),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Color(0xFF333333),
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4),
                 Text(
                   '$durasi detik',
-                  style: const TextStyle(color: Colors.black54, fontSize: 12),
+                  style: TextStyle(color: Colors.black54, fontSize: 12),
                 ),
               ],
             ),
@@ -482,12 +482,12 @@ class _BerandaPageState extends State<BerandaPage> {
           GestureDetector(
             onTap: () => _startSinglePemanasan(context, latihan),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFFCF0F0F),
+                color: Color(0xFFCF0F0F),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
+              child: Text(
                 'Mulai',
                 style: TextStyle(
                   color: Colors.white,
@@ -516,7 +516,7 @@ class _BerandaPageState extends State<BerandaPage> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                  builder: (context) => const HalamanLaporkan()),
+                  builder: (context) => HalamanLaporkan()),
             );
           } else if (route == '/saya') {
             Navigator.pushReplacement(
@@ -531,14 +531,14 @@ class _BerandaPageState extends State<BerandaPage> {
         children: [
           Icon(
             icon,
-            color: isActive ? const Color(0xFFCF0F0F) : Colors.grey,
+            color: isActive ? Color(0xFFCF0F0F) : Colors.grey,
             size: 24,
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 4),
           Text(
             label,
             style: TextStyle(
-              color: isActive ? const Color(0xFFCF0F0F) : Colors.grey,
+              color: isActive ? Color(0xFFCF0F0F) : Colors.grey,
               fontSize: 12,
             ),
           ),
