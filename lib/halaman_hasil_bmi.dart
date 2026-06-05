@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tubes_ppb/services/api_service.dart';
+import 'package:tubes_ppb/services/notification_service.dart';
 import 'package:tubes_ppb/user_provider.dart';
 import 'halaman_beranda.dart';
 
@@ -44,6 +45,9 @@ class _HasilBmiPageState extends State<HasilBmiPage> {
   Future<void> _simpanDanMulai() async {
     setState(() => _isLoading = true);
 
+    final apiService = Provider.of<ApiService>(context, listen: false);
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+
     try {
       final prefs = await SharedPreferences.getInstance();
 
@@ -52,11 +56,11 @@ class _HasilBmiPageState extends State<HasilBmiPage> {
       await prefs.setInt('user_target_berat', widget.targetBerat);
       await prefs.setInt('user_tinggi', widget.tinggiBadan);
 
-      // Simpan ke MySQL via API
-      final apiService = Provider.of<ApiService>(context, listen: false);
+      // Ambil nama dari SharedPreferences
       final nama = prefs.getString('api_nama') ?? '';
 
-      final result = await apiService.updateProfil(
+      // Simpan profil ke MySQL
+      await apiService.updateProfil(
         nama: nama,
         beratBadan: widget.beratBadan,
         targetBerat: widget.targetBerat,
@@ -67,32 +71,27 @@ class _HasilBmiPageState extends State<HasilBmiPage> {
       await apiService.saveBerat(widget.beratBadan.toDouble());
 
       // Update provider
-      if (mounted) {
-        final userProvider =
-            Provider.of<UserProvider>(context, listen: false);
-        await userProvider.loadUserData();
-      }
+      await userProvider.loadUserData();
 
-      if (!mounted) return;
-
-      if (result['success'] == true) {
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => BerandaPage()),
-          (route) => false,
-        );
+      // Tampilkan notifikasi sambutan
+      if (nama.isNotEmpty) {
+        await NotificationService().showWelcomeNotification(nama);
       } else {
-        // Tetap lanjut ke beranda meski API gagal
-        // karena data sudah tersimpan di SharedPreferences
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => BerandaPage()),
-          (route) => false,
-        );
+        await NotificationService().showWelcomeNotification('Pengguna Baru');
       }
-    } catch (e) {
+
       if (!mounted) return;
-      // Tetap lanjut ke beranda
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => BerandaPage()),
+        (route) => false,
+      );
+    } catch (e) {
+      print('Error simpan profil: $e');
+      if (!mounted) return;
+
+      // Tetap lanjut ke beranda meski error
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => BerandaPage()),
@@ -126,7 +125,10 @@ class _HasilBmiPageState extends State<HasilBmiPage> {
                 ),
                 textAlign: TextAlign.center,
               ),
+
               SizedBox(height: 50),
+
+              // BMI Card
               Container(
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -137,7 +139,10 @@ class _HasilBmiPageState extends State<HasilBmiPage> {
                   children: [
                     Text(
                       'Target BMI ${targetBMI.toStringAsFixed(1)}',
-                      style: TextStyle(color: Colors.white, fontSize: 18),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                      ),
                     ),
                     SizedBox(height: 20),
                     Text(
@@ -150,12 +155,18 @@ class _HasilBmiPageState extends State<HasilBmiPage> {
                     ),
                     Text(
                       'BMI saat ini - $status',
-                      style: TextStyle(color: Colors.white, fontSize: 16),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),
               ),
+
               SizedBox(height: 50),
+
+              // Tombol Mulai Latihan
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -168,7 +179,7 @@ class _HasilBmiPageState extends State<HasilBmiPage> {
                     ),
                   ),
                   child: _isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
