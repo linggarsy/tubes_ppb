@@ -8,6 +8,7 @@ import 'package:tubes_ppb/halaman_sign_in.dart';
 import 'package:tubes_ppb/halaman_sign_up.dart';
 import 'package:tubes_ppb/services/api_service.dart';
 import 'package:tubes_ppb/services/auth_service.dart';
+import 'package:tubes_ppb/services/notification_service.dart';
 import 'package:tubes_ppb/user_provider.dart';
 import 'halaman_berat_badan.dart';
 import 'halaman_beranda.dart';
@@ -24,6 +25,9 @@ void main() async {
   } catch (e) {
     print('Firebase initialization error: $e');
   }
+
+  // Inisialisasi notifikasi
+  await NotificationService().initialize();
 
   runApp(const MyApp());
 }
@@ -99,7 +103,6 @@ class AuthWrapper extends StatelessWidget {
   }
 }
 
-// Widget terpisah untuk cek data user dari MySQL
 class _CheckUserDataPage extends StatefulWidget {
   _CheckUserDataPage();
 
@@ -118,20 +121,17 @@ class _CheckUserDataPageState extends State<_CheckUserDataPage> {
     final apiService = Provider.of<ApiService>(context, listen: false);
 
     try {
-      // Cek apakah user_id tersimpan di session
       final userId = await apiService.getUserId();
 
       print('=== CHECK USER DATA ===');
       print('userId: $userId');
 
       if (userId == null) {
-        // Belum ada session MySQL → ke Sign In
         if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/signin');
         return;
       }
 
-      // Ambil profil dari MySQL
       final result = await apiService.getProfil();
       print('profil result: $result');
 
@@ -141,30 +141,24 @@ class _CheckUserDataPageState extends State<_CheckUserDataPage> {
         final data = result['data'];
         final beratBadan = data['berat_badan'] ?? 0;
         final tinggiBadan = data['tinggi_badan'] ?? 0;
-
-        // Cek apakah sudah isi data profil
         final hasFilledData = beratBadan > 0 && tinggiBadan > 0;
 
         print('hasFilledData: $hasFilledData');
 
         if (hasFilledData) {
-          // Pengguna lama → langsung ke Beranda
           Navigator.pushReplacementNamed(context, '/beranda');
         } else {
-          // Pengguna baru → isi data dulu
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => BeratBadanPage()),
           );
         }
       } else {
-        // Gagal ambil profil → ke Sign In
         Navigator.pushReplacementNamed(context, '/signin');
       }
     } catch (e) {
       print('Error check user data: $e');
       if (!mounted) return;
-      // Error → ke Sign In
       Navigator.pushReplacementNamed(context, '/signin');
     }
   }
