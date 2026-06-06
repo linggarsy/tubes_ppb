@@ -280,7 +280,7 @@ class NotificationService {
           importance: Importance.high,
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
-          color: const Color(0xFFCF0F0F),
+          color: Color(0xFFCF0F0F),
         ),
       ),
       payload: 'welcome',
