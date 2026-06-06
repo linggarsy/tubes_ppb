@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tubes_ppb/services/api_service.dart';
 
 // Handler untuk notifikasi saat app di background/terminated
 @pragma('vm:entry-point')
@@ -10,7 +13,8 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 }
 
 class NotificationService {
-  static final NotificationService _instance = NotificationService._internal();
+  static final NotificationService _instance =
+      NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
 
@@ -18,8 +22,8 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _localNotifications =
       FlutterLocalNotificationsPlugin();
 
-  // Channel untuk notifikasi Android
-  static const AndroidNotificationChannel _channel = AndroidNotificationChannel(
+  static const AndroidNotificationChannel _channel =
+      AndroidNotificationChannel(
     'tubes_ppb_channel',
     'Tubes PPB Notifications',
     description: 'Notifikasi reminder latihan harian',
@@ -27,16 +31,9 @@ class NotificationService {
   );
 
   Future<void> initialize() async {
-    // 1. Request permission
     await _requestPermission();
-
-    // 2. Setup local notifications
     await _setupLocalNotifications();
-
-    // 3. Setup FCM handlers
     _setupFCMHandlers();
-
-    // 4. Get FCM token
     await _getFCMToken();
   }
 
@@ -47,18 +44,15 @@ class NotificationService {
       sound: true,
       provisional: false,
     );
-
     print('Notification permission: ${settings.authorizationStatus}');
   }
 
   Future<void> _setupLocalNotifications() async {
-    // Buat channel Android
     await _localNotifications
         .resolvePlatformSpecificImplementation;
             AndroidFlutterLocalNotificationsPlugin>()
         .createNotificationChannel(_channel);
 
-    // Inisialisasi
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -88,7 +82,8 @@ class NotificationService {
     });
 
     // Background handler
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    FirebaseMessaging.onBackgroundMessage(
+        firebaseMessagingBackgroundHandler);
   }
 
   Future<void> _getFCMToken() async {
@@ -97,16 +92,66 @@ class NotificationService {
       print('=== FCM TOKEN ===');
       print(token);
 
-      // Simpan token untuk dikirim ke server kalau perlu
-      _fcm.onTokenRefresh.listen((newToken) {
+      // Refresh token otomatis
+      _fcm.onTokenRefresh.listen((newToken) async {
         print('FCM Token refreshed: $newToken');
+        await _saveTokenToServer(newToken);
       });
     } catch (e) {
       print('Error get FCM token: $e');
     }
   }
 
-  // Tampilkan notifikasi lokal saat app di foreground
+  // Dipanggil setelah login berhasil
+  Future<void> saveTokenAfterLogin() async {
+    try {
+      final token = await _fcm.getToken();
+      if (token != null) {
+        await _saveTokenToServer(token);
+      }
+    } catch (e) {
+      print('Error saveTokenAfterLogin: $e');
+    }
+  }
+
+  Future<void> _saveTokenToServer(String token) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getInt('api_user_id');
+
+      if (userId == null || userId <= 0) {
+        print('userId null, skip save token');
+        return;
+      }
+
+      // Cek apakah token sudah pernah disimpan
+      final savedToken = prefs.getString('saved_fcm_token');
+      if (savedToken == token) {
+        print('FCM token sama, skip save');
+        return;
+      }
+
+      final response = await http.post(
+        Uri.parse('${ApiService.baseUrl}/save_token.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': userId,
+          'fcm_token': token,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+      if (data['success'] == true) {
+        await prefs.setString('saved_fcm_token', token);
+        print('FCM token berhasil disimpan ke server');
+      } else {
+        print('Gagal simpan FCM token: ${data['message']}');
+      }
+    } catch (e) {
+      print('Error save FCM token: $e');
+    }
+  }
+
   Future<void> _showLocalNotification(RemoteMessage message) async {
     final notification = message.notification;
     if (notification == null) return;
@@ -130,14 +175,12 @@ class NotificationService {
   }
 
   void _handleNotificationTap(RemoteMessage message) {
-    // Handle navigasi berdasarkan data notifikasi
     final data = message.data;
     print('Notification data: $data');
   }
 
   // Notifikasi Lokal
 
-  // Notifikasi reminder latihan harian
   Future<void> showReminderLatihan() async {
     await _localNotifications.show(
       1,
@@ -158,7 +201,6 @@ class NotificationService {
     );
   }
 
-  // Notifikasi selesai latihan
   Future<void> showLatihanSelesai(String hariKe) async {
     await _localNotifications.show(
       2,
@@ -179,7 +221,6 @@ class NotificationService {
     );
   }
 
-  // Notifikasi milestone
   Future<void> showMilestone(int hariSelesai) async {
     String judul = '';
     String pesan = '';
@@ -191,7 +232,8 @@ class NotificationService {
         break;
       case 6:
         judul = '🌟 Milestone 6 Hari!';
-        pesan = 'Setengah jalan! Kamu sudah selesai 6 dari 12 hari latihan!';
+        pesan =
+            'Setengah jalan! Kamu sudah selesai 6 dari 12 hari latihan!';
         break;
       case 9:
         judul = '💫 Milestone 9 Hari!';
@@ -225,7 +267,6 @@ class NotificationService {
     );
   }
 
-  // Notifikasi sambutan pengguna baru
   Future<void> showWelcomeNotification(String nama) async {
     await _localNotifications.show(
       4,
@@ -239,7 +280,7 @@ class NotificationService {
           importance: Importance.high,
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
-          color: Color(0xFFCF0F0F),
+          color: const Color(0xFFCF0F0F),
         ),
       ),
       payload: 'welcome',
