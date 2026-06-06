@@ -4,6 +4,7 @@ import 'package:tubes_ppb/halaman_berat_badan.dart';
 import 'package:tubes_ppb/halaman_sign_up.dart';
 import 'package:tubes_ppb/services/api_service.dart';
 import 'package:tubes_ppb/services/auth_service.dart';
+import 'package:tubes_ppb/services/notification_service.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -49,6 +50,9 @@ class _SignInPageState extends State<SignInPage> {
       if (!mounted) return;
 
       if (result['success'] == true) {
+        // 3. Simpan FCM token ke server setelah login berhasil
+        await NotificationService().saveTokenAfterLogin();
+
         final hasFilledData = result['data']['has_filled_data'] ?? false;
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -125,6 +129,9 @@ class _SignInPageState extends State<SignInPage> {
       if (result['success'] == true) {
         final savedUserId = await apiService.getUserId();
         print('savedUserId setelah login: $savedUserId');
+
+        // 3. Simpan FCM token ke server setelah login berhasil
+        await NotificationService().saveTokenAfterLogin();
 
         final hasFilledData = result['data']['has_filled_data'] ?? false;
 
@@ -239,15 +246,16 @@ class _SignInPageState extends State<SignInPage> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                BorderSide(color: Color(0xFFCF0F0F)),
+                            borderSide: BorderSide(
+                                color: Color(0xFFCF0F0F)),
                           ),
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Email tidak boleh kosong';
                           }
-                          if (!value.contains('@') || !value.contains('.')) {
+                          if (!value.contains('@') ||
+                              !value.contains('.')) {
                             return 'Masukkan email yang valid';
                           }
                           return null;
@@ -282,7 +290,8 @@ class _SignInPageState extends State<SignInPage> {
                               color: Colors.grey,
                             ),
                             onPressed: () => setState(
-                              () => _isPasswordVisible = !_isPasswordVisible,
+                              () => _isPasswordVisible =
+                                  !_isPasswordVisible,
                             ),
                           ),
                           border: OutlineInputBorder(
@@ -295,8 +304,8 @@ class _SignInPageState extends State<SignInPage> {
                           ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide:
-                                BorderSide(color: Color(0xFFCF0F0F)),
+                            borderSide: BorderSide(
+                                color: Color(0xFFCF0F0F)),
                           ),
                         ),
                         validator: (value) {
@@ -352,7 +361,8 @@ class _SignInPageState extends State<SignInPage> {
                 // Divider
                 Row(
                   children: [
-                    Expanded(child: Divider(color: Colors.grey.shade300)),
+                    Expanded(
+                        child: Divider(color: Colors.grey.shade300)),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 12),
                       child: Text(
@@ -360,7 +370,8 @@ class _SignInPageState extends State<SignInPage> {
                         style: TextStyle(color: Colors.grey),
                       ),
                     ),
-                    Expanded(child: Divider(color: Colors.grey.shade300)),
+                    Expanded(
+                        child: Divider(color: Colors.grey.shade300)),
                   ],
                 ),
 
@@ -370,9 +381,11 @@ class _SignInPageState extends State<SignInPage> {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed: _isGoogleLoading ? null : _loginWithGoogle,
+                    onPressed:
+                        _isGoogleLoading ? null : _loginWithGoogle,
                     style: OutlinedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 14),
+                      padding:
+                          EdgeInsets.symmetric(vertical: 14),
                       side: BorderSide(color: Colors.grey.shade300),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -382,7 +395,8 @@ class _SignInPageState extends State<SignInPage> {
                         ? SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2),
                           )
                         : Image.network(
                             'https://www.google.com/favicon.ico',
